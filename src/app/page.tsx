@@ -5,7 +5,7 @@ const Page = () => {
         <div>
             Ved Tellawar
         </div>
-    )
+    );
 }
 
-export default Page
+export default Page;
