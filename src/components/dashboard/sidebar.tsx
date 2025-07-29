@@ -1,9 +1,7 @@
 import { CalendarDays } from "lucide-react";
-
-// import { Button } from "@/components/ui/button";
+import { SidebarUserProfile } from "./sidebar-profile";
 
 import { Navigation } from "./navigation";
-import { SidebarUserProfile } from "./sidebar-profile";
 
 
 export const Sidebar = () => {
