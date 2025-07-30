@@ -99,7 +99,7 @@ export const Events = () => {
                         placeholder="Search events..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-[#eeece7]"
+                        className="pl-10 bg-[#f9fafb] focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <Button className="flex items-center">

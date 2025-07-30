@@ -150,7 +150,7 @@ export const Tasks = () => {
                         placeholder="Search tasks..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-[#f4f3f0]"
+                        className="pl-10 bg-[#f9fafb] focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <Button className="flex items-center">
