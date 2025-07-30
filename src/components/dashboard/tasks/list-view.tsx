@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar, Edit, MoreHorizontal, User } from "lucide-react"
 
 
-type Task = {
+export type Task = {
     id: number;
     title: string;
     description: string;

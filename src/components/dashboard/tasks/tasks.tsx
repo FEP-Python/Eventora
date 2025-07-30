@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { ListView } from "./list-view";
+import { KanbanView } from "./kanban-view";
 
 
 export const Tasks = () => {
@@ -135,7 +136,7 @@ export const Tasks = () => {
                             List
                         </Button>
                     </div>
-                    <Button className="flex items-center">
+                    <Button variant="green" className="flex items-center">
                         <Plus className="h-4 w-4" />
                         <span>Add Task</span>
                     </Button>
@@ -149,7 +150,7 @@ export const Tasks = () => {
                         placeholder="Search tasks..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-[#eeece7]"
+                        className="pl-10 bg-[#f4f3f0]"
                     />
                 </div>
                 <Button className="flex items-center">
@@ -160,6 +161,10 @@ export const Tasks = () => {
 
             {viewMode === "list" && (
                 <ListView tasks={filteredTasks} />
+            )}
+
+            {viewMode === "kanban" && (
+                <KanbanView tasks={tasks} />
             )}
         </div>
     );
