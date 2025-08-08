@@ -1,8 +1,7 @@
-from email.policy import default
-
 from config import db
 from enum import Enum
 from datetime import datetime
+
 
 # ENUMS
 class EventStatus(Enum):
@@ -30,47 +29,49 @@ class UserRole(Enum):
     MEMBER = "member"
     VOLUNTEER = "volunteer"
 
-# ASSOCIATION TABLE - MANY TO MANY
-organization_members = db.Table("organization_members",
-    db.Column("user_id", db.Integer, db.ForeignKey("user.id"), primary_key=True),
-    db.Column('org_id', db.Integer, db.ForeignKey('organization.id'), primary_key=True),
-    db.Column('role', db.String(20), default='member'),
-    db.Column('joined_at', db.DateTime, default=datetime.utcnow)
+
+# Association Models
+class OrganizationMember(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), primary_key=True)
+    role = db.Column(db.Enum(UserRole), default=UserRole.MEMBER, nullable=False)
+    user = db.relationship("User", back_populates="organization_memberships")
+    organization = db.relationship("Organization", back_populates="members"
 )
 
-team_members = db.Table('team_members',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('team_id', db.Integer, db.ForeignKey('team.id'), primary_key=True),
-    db.Column('role', db.String(20), default='member'),
-    db.Column('joined_at', db.DateTime, default=datetime.utcnow)
+class TeamMember(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("team.id"), primary_key=True)
+    role = db.Column(db.Enum(UserRole), default=UserRole.MEMBER, nullable=False)
+    user = db.relationship("User", back_populates="team_memberships")
+    team = db.relationship("Team", back_populates="members"
 )
 
-task_assignees = db.Table('task_assignees',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('task_id', db.Integer, db.ForeignKey('task.id'), primary_key=True),
-    db.Column('assigned_at', db.DateTime, default=datetime.utcnow)
-)
 
 # MODELS
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(80), nullable=False, unique=False)
-    last_name = db.Column(db.String(80), nullable=False, unique=False)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
-    password = db.Column(db.String(120), nullable=False, unique=False)
+    password = db.Column(db.String(120), nullable=False)
     role = db.Column(db.Enum(UserRole), default=UserRole.MEMBER, nullable=False)
-    college = db.Column(db.String(100), nullable=True)
+    college = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    owned_organizations = db.relationship('Organization', backref='owner', lazy=True)
-    created_events = db.relationship('Event', backref='creator', lazy=True)
-    created_tasks = db.relationship('Task', foreign_keys='Task.creator_id', backref='creator', lazy=True)
-    led_teams = db.relationship('Team', backref='leader', lazy=True)
+    organization_memberships = db.relationship("OrganizationMember", back_populates="user", cascade="all, delete-orphan")
+    team_memberships = db.relationship("TeamMember", back_populates="user", cascade="all, delete-orphan")
+    tasks_assigned = db.relationship("Task", back_populates="assignee", foreign_keys="Task.assignee_id")
 
-    organizations = db.relationship('Organization', secondary=organization_members, backref='members')
-    teams = db.relationship('Team', secondary=team_members, backref='members')
-    assigned_tasks = db.relationship('Task', secondary=task_assignees, backref='assignees')
+    owned_organizations = db.relationship("Organization", backref="owner", lazy=True, cascade="all, delete-orphan")
+    created_events = db.relationship("Event", backref="creator", lazy=True, cascade="all, delete-orphan")
+    created_tasks = db.relationship("Task", foreign_keys="Task.creator_id", backref="creator", lazy=True, cascade="all, delete-orphan")
+    led_teams = db.relationship("Team", backref="leader", lazy=True, cascade="all, delete-orphan")
+
+    __table_args__ = (
+        db.Index("idx_user_name", "first_name", "last_name"),
+    )
 
     def to_json(self):
         return {
@@ -86,19 +87,26 @@ class User(db.Model):
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(80), nullable=False, unique=False)
+    name = db.Column(db.String(80), nullable=False)
     college = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text)
     contact_email = db.Column(db.String(120), nullable=False)
     contact_phone = db.Column(db.String(15), nullable=False)
-    website = db.Column(db.String(255), nullable=True)
+    website = db.Column(db.String(255))
     code = db.Column(db.String(20), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    events = db.relationship('Event', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
-    teams = db.relationship('Team', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
-    budgets = db.relationship('Budget', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
+    members = db.relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
+    events = db.relationship("Event", back_populates="organization", lazy=True, cascade="all, delete-orphan")
+    teams = db.relationship("Team", back_populates="organization", lazy=True, cascade="all, delete-orphan")
+    budgets = db.relationship("Budget", backref="organization", lazy=True, cascade="all, delete-orphan")
+
+    __table_args__ = (
+        db.Index("idx_org_owner", "owner_id"),
+        db.Index("idx_org_name", "name"),
+        db.Index("idx_org_code", "code"),
+    )
 
     def to_json(self):
         return {
@@ -116,10 +124,10 @@ class Organization(db.Model):
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False, unique=False)
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=False)
-    title = db.Column(db.String(80), nullable=False, unique=False)
-    description = db.Column(db.Text, unique=False)
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(80), nullable=False)
+    description = db.Column(db.Text)
     start_date = db.Column(db.DateTime, nullable=False)
     end_date = db.Column(db.DateTime, nullable=False)
     registration_deadline = db.Column(db.DateTime)
@@ -134,7 +142,12 @@ class Event(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    tasks = db.relationship('Task', backref='event', lazy=True, cascade='all, delete-orphan')
+    organization = db.relationship("Organization", back_populates="events")
+    tasks = db.relationship("Task", back_populates="event", lazy=True, cascade="all, delete-orphan")
+
+    __table_args__ = (
+        db.Index("idx_event_org_title", "org_id", "title"),
+    )
 
     def to_json(self):
         return {
@@ -148,7 +161,6 @@ class Event(db.Model):
             "registrationDeadline": self.registration_deadline,
             "capacity": self.capacity,
             "location": self.location,
-            "venueDetails": self.venue_details,
             "eventType": self.event_type,
             "status": self.status,
             "isPublic": self.is_public,
@@ -163,12 +175,17 @@ class Team(db.Model):
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
     leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    members = db.relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
     organization = db.relationship("Organization", back_populates="teams")
     tasks = db.relationship("Task", back_populates="team", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        db.Index("idx_team_org_name", "org_id", "name"),
+    )
 
     def to_json(self):
         return {
@@ -185,6 +202,7 @@ class Task(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    assignee_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
     priority = db.Column(db.Enum(Priority), default=Priority.MEDIUM)
@@ -193,8 +211,14 @@ class Task(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    assignee = db.relationship("User", back_populates="tasks_assigned", foreign_keys=[assignee_id])
     event = db.relationship("Event", back_populates="tasks")
     team = db.relationship("Team", back_populates="tasks")
+
+    __table_args__ = (
+        db.Index("idx_task_team_status", "team_id", "status"),
+        db.Index("idx_task_event_status", "event_id", "status"),
+    )
 
     def to_json(self):
         return {
@@ -202,13 +226,13 @@ class Task(db.Model):
             "eventId": self.event_id,
             "teamId": self.team_id,
             "creatorId": self.creator_id,
+            "assigneeId": self.assignee_id,
             "title": self.title,
             "description": self.description,
             "priority": self.priority.value if self.priority else None,
             "status": self.status.value if self.status else None,
             "dueDate": self.due_date.isoformat() if self.due_date else None,
-            "createdAt": self.created_at.isoformat() if self.created_at else None,
-            "completedAt": self.completed_at.isoformat() if self.completed_at else None,
+            "createdAt": self.created_at.isoformat() if self.created_at else None
         }
 
 class Budget(db.Model):
@@ -220,6 +244,10 @@ class Budget(db.Model):
     spent_amount = db.Column(db.Float, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index("idx_budget_org_name", "org_id", "name"),
+    )
 
     def to_json(self):
         return {
