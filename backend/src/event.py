@@ -1,5 +1,6 @@
 from config import db
 from models import Event
+from datetime import datetime
 from lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
@@ -24,8 +25,11 @@ def create_event(current_user):
     entry_free = request.json.get("entryFree")
     certificate_provided = request.json.get("certificateProvided")
 
-    if not all([org_id, title, start_date, end_date, location, event_type, status, is_public]):
+    if not all([org_id, title, start_date, end_date, location, event_type, status]):
         return jsonify({"message": "All fields are required"}), 400
+
+    if end_date >= start_date:
+        return jsonify({"message": "End date cannot be before start date"}), 400
 
     creator_id = current_user.id
 
@@ -60,10 +64,18 @@ def create_event(current_user):
 
 @event_bp.route("/get-all/<int:org_id>", methods=["GET"])
 @token_required
-def get_all_events_by_org_id(org_id):
+def get_all_events_by_org_id(current_user, org_id):
     events = Event.query.filter_by(org_id=org_id).all()
     json_events = list(map(lambda event: event.to_json(), events))
     return jsonify({"data": json_events}), 200
+
+@event_bp.route("/get/<int:event_id>", methods=["GET"])
+@token_required
+def get_event_by_id(current_user, event_id):
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"message": "Event not found"}), 404
+    return jsonify({"data": event.to_json()}), 200
 
 @event_bp.route("/update/<int:event_id>", methods=["PATCH"])
 @token_required
@@ -107,3 +119,31 @@ def delete_event(event_id, current_user):
     db.session.commit()
 
     return jsonify({"message": "Event deleted"}), 200
+
+@event_bp.route("/search", methods=["GET"])
+@token_required
+def search_events(current_user):
+    query = Event.query
+    title = request.args.get("title")
+    event_type = request.args.get("type")
+    status = request.args.get("status")
+
+    if title:
+        query = query.filter(Event.title.ilike(f"%{title}%"))
+    if event_type:
+        query = query.filter_by(event_type=event_type)
+    if status:
+        query = query.filter_by(status=status)
+
+    events = query.all()
+    return jsonify({"data": [event.to_json() for event in events]}), 200
+
+@event_bp.route("/upcoming", methods=["GET"])
+def get_upcoming_events():
+    now = datetime.utcnow()
+    events = Event.query.filter(
+        Event.start_date > now,
+        Event.is_public == True
+    ).all()
+    return jsonify({"data": [event.to_json() for event in events]}), 200
+
