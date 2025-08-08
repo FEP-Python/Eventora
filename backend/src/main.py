@@ -1,4 +1,5 @@
 from org import org_bp
+from task import task_bp
 from team import team_bp
 from auth import auth_bp
 from event import event_bp
@@ -8,6 +9,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(org_bp, url_prefix='/org')
 app.register_blueprint(event_bp, url_prefix='/event')
 app.register_blueprint(team_bp, url_prefix='/team')
+app.register_blueprint(task_bp, url_prefix='/task')
 
 if __name__ == "__main__":
     with app.app_context():

@@ -192,7 +192,6 @@ class Task(db.Model):
     due_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed_at = db.Column(db.DateTime, nullable=True)
 
     event = db.relationship("Event", back_populates="tasks")
     team = db.relationship("Team", back_populates="tasks")
