@@ -97,10 +97,3 @@ def delete_org(org_id, current_user):
     db.session.commit()
 
     return jsonify({"message": "Organization deleted"}), 200
-
-@org_bp.route("/users", methods=["GET"])
-@token_required
-def get_user_orgs(current_user):
-    orgs = Organization.query.filter_by(owner_id=current_user.id).all()
-    json_orgs = list(map(lambda org: org.to_json(), orgs))
-    return jsonify({"data": json_orgs})

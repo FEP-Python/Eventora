@@ -36,9 +36,15 @@ def create_team(current_user):
         db.session.rollback()
         return jsonify(({"message": str(e)}), 400)
 
+@team_bp.route("/get-all", methods=["GET"])
+def get_all_teams():
+    teams = Team.query.all()
+    json_teams = list(map(lambda team: team.to_json(), teams))
+    return jsonify({"data": json_teams})
+
 @team_bp.route("/get-all/<int:org_id>", methods=["GET"])
 @token_required
-def get_all_teams_by_org_id(org_id):
+def get_teams_by_org_id(org_id):
     teams = Team.query.filter_by(org_id=org_id).all()
     json_teams = list(map(lambda team: team.to_json(), teams))
     return jsonify({"data": json_teams}), 200
@@ -75,10 +81,3 @@ def delete_team(team_id, current_user):
     db.session.commit()
 
     return jsonify({"message": "Team deleted"}), 200
-
-@team_bp.route("/users", methods=["GET"])
-@token_required
-def get_user_created_events(current_user):
-    events = Event.query.filter_by(creator_id=current_user.id).all()
-    json_events = list(map(lambda event: event.to_json(), events))
-    return jsonify({"data": json_events}), 200

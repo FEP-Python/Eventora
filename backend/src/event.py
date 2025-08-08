@@ -107,10 +107,3 @@ def delete_event(event_id, current_user):
     db.session.commit()
 
     return jsonify({"message": "Event deleted"}), 200
-
-@event_bp.route("/users", methods=["GET"])
-@token_required
-def get_user_created_events(current_user):
-    events = Event.query.filter_by(creator_id=current_user.id).all()
-    json_events = list(map(lambda event: event.to_json(), events))
-    return jsonify({"data": json_events}), 200
