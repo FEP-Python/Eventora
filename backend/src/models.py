@@ -47,6 +47,15 @@ class TeamMember(db.Model):
     team = db.relationship("Team", back_populates="members"
 )
 
+class TaskAssignee(db.Model):
+    task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index("idx_task_user", "task_id", "user_id"),
+    )
+
 
 # MODELS
 class User(db.Model):
