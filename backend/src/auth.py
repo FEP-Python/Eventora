@@ -1,8 +1,6 @@
-import jwt
 from config import db
-from models import User
-from config import SECRET_KEY
 from lib import generate_token
+from models import User, UserRole
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,8 +13,9 @@ def register():
     last_name = request.json.get("lastName")
     email = request.json.get("email")
     password = request.json.get("password")
+    role = request.json.get("role", UserRole.MEMBER)
 
-    if not all([first_name, last_name, email, password]):
+    if not all([first_name, last_name, email, password, role]):
         return jsonify({"message": "All fields are required!"}), 400
 
     existing_user = User.query.filter_by(email=email).first()
@@ -29,7 +28,8 @@ def register():
         first_name=first_name,
         last_name=last_name,
         email=email,
-        password=hashed_password
+        password=hashed_password,
+        role=role,
     )
 
     try:
@@ -65,16 +65,3 @@ def login():
         "token": token,
         "user": user.to_json()
     }), 200
-
-@auth_bp.route("/profile", methods=["GET"])
-def get_profile():
-    token = request.headers.get("Authorization")
-    if not token:
-        return jsonify({"error": "Token required"}), 401
-
-    try:
-        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        user = User.query.get(decoded["id"])
-        return jsonify({"user": user.to_json()}), 200
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token expired"}), 403

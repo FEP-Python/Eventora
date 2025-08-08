@@ -96,9 +96,9 @@ class Organization(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    events = db.relationship('Event', backref='organization', lazy=True, cascade='all, delete-orphan')
-    teams = db.relationship('Team', backref='organization', lazy=True, cascade='all, delete-orphan')
-    budgets = db.relationship('Budget', backref='organization', lazy=True, cascade='all, delete-orphan')
+    events = db.relationship('Event', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
+    teams = db.relationship('Team', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
+    budgets = db.relationship('Budget', backref='organization', back_populates="organization", lazy=True, cascade='all, delete-orphan')
 
     def to_json(self):
         return {
@@ -167,7 +167,8 @@ class Team(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    tasks = db.relationship('Task', backref='assigned_team', lazy=True)
+    organization = db.relationship("Organization", back_populates="teams")
+    tasks = db.relationship("Task", back_populates="team", cascade="all, delete-orphan")
 
     def to_json(self):
         return {
@@ -192,6 +193,9 @@ class Task(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
+
+    event = db.relationship("Event", back_populates="tasks")
+    team = db.relationship("Team", back_populates="tasks")
 
     def to_json(self):
         return {
