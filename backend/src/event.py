@@ -1,9 +1,9 @@
 from config import db
-from models import Event
 from datetime import datetime
 from lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
+from models import Event, Organization, EventStatus
 
 event_bp = Blueprint("event", __name__)
 
@@ -13,25 +13,29 @@ def create_event(current_user):
     org_id = request.json.get("orgId")
     title = request.json.get("title")
     description = request.json.get("description")
-    start_date = request.json.get("startDate")
-    end_date = request.json.get("endDate")
-    registration_deadline = request.json.get("registrationDeadline")
+    start_date = datetime.fromisoformat(request.json.get("startDate"))
+    end_date = datetime.fromisoformat(request.json.get("endDate"))
+    registration_deadline = datetime.fromisoformat(request.json.get("registrationDeadline"))
     capacity = request.json.get("capacity")
     location = request.json.get("location")
     event_type = request.json.get("eventType")
-    status = request.json.get("status")
+    status = request.json.get("status", EventStatus.DRAFT)
     is_public = request.json.get("isPublic")
     registration_required = request.json.get("registrationRequired")
-    entry_free = request.json.get("entryFree")
+    entry_fee = request.json.get("entryFee")
     certificate_provided = request.json.get("certificateProvided")
 
     if not all([org_id, title, start_date, end_date, location, event_type, status]):
         return jsonify({"message": "All fields are required"}), 400
 
-    if end_date >= start_date:
+    if end_date < start_date:
         return jsonify({"message": "End date cannot be before start date"}), 400
 
     creator_id = current_user.id
+
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({"message": "Organization not found"}), 404
 
     new_event = Event(
         creator_id=creator_id,
@@ -47,7 +51,7 @@ def create_event(current_user):
         status=status,
         is_public=is_public,
         registration_required=registration_required,
-        entry_free=entry_free,
+        entry_fee=entry_fee,
         certificate_provided=certificate_provided,
     )
 
@@ -65,9 +69,12 @@ def create_event(current_user):
 @event_bp.route("/get-all/<int:org_id>", methods=["GET"])
 @token_required
 def get_all_events_by_org_id(current_user, org_id):
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({"message": "Organization not found"}), 404
+
     events = Event.query.filter_by(org_id=org_id).all()
-    json_events = list(map(lambda event: event.to_json(), events))
-    return jsonify({"data": json_events}), 200
+    return jsonify({"data": [e.to_json() for e in events]}), 200
 
 @event_bp.route("/get/<int:event_id>", methods=["GET"])
 @token_required
@@ -79,7 +86,7 @@ def get_event_by_id(current_user, event_id):
 
 @event_bp.route("/update/<int:event_id>", methods=["PATCH"])
 @token_required
-def update_event(event_id, current_user):
+def update_event(current_user, event_id):
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"message": "Event not found"}), 404
@@ -98,7 +105,7 @@ def update_event(event_id, current_user):
     event.status = data.get("status", event.status)
     event.is_public = data.get("isPublic", event.is_public)
     event.registration_required = data.get("registrationRequired", event.registration_required)
-    event.entry_free = data.get("entryFree", event.entry_free)
+    event.entry_fee = data.get("entryFee", event.entry_fee)
     event.certificate_provided = data.get("certificateProvided", event.certificate_provided)
 
     db.session.commit()
@@ -107,7 +114,7 @@ def update_event(event_id, current_user):
 
 @event_bp.route("/delete/<int:event_id>", methods=["DELETE"])
 @token_required
-def delete_event(event_id, current_user):
+def delete_event(current_user, event_id):
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"message": "Event not found"}), 404
@@ -138,12 +145,17 @@ def search_events(current_user):
     events = query.all()
     return jsonify({"data": [event.to_json() for event in events]}), 200
 
-@event_bp.route("/upcoming", methods=["GET"])
-def get_upcoming_events():
+@event_bp.route("/upcoming/<int:org_id>", methods=["GET"])
+def get_org_upcoming_events(org_id):
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({"message": "Organization not found"}), 404
+
     now = datetime.utcnow()
     events = Event.query.filter(
         Event.start_date > now,
-        Event.is_public == True
+        Event.is_public == True,
+        org_id == org.id,
     ).all()
     return jsonify({"data": [event.to_json() for event in events]}), 200
 
