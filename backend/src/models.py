@@ -1,5 +1,5 @@
-from config import db
 from enum import Enum
+from config import db
 from datetime import datetime
 
 
@@ -24,7 +24,7 @@ class Priority(Enum):
     CRITICAL = "critical"
 
 class UserRole(Enum):
-    Leader = "leader"
+    LEADER = "leader"
     COLEADER = "coleader"
     MEMBER = "member"
     VOLUNTEER = "volunteer"
@@ -48,8 +48,8 @@ class TeamMember(db.Model):
 )
 
 class TaskAssignee(db.Model):
-    task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (
@@ -88,7 +88,7 @@ class User(db.Model):
             "firstName": self.first_name,
             "lastName": self.last_name,
             "email": self.email,
-            "role": self.role,
+            "role": self.role.value if self.role else None,
             "college": self.college,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
@@ -109,6 +109,7 @@ class Organization(db.Model):
     members = db.relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
     events = db.relationship("Event", back_populates="organization", lazy=True, cascade="all, delete-orphan")
     teams = db.relationship("Team", back_populates="organization", lazy=True, cascade="all, delete-orphan")
+    tasks = db.relationship("Task", back_populates="organization", lazy=True, cascade="all, delete-orphan")
     budgets = db.relationship("Budget", backref="organization", lazy=True, cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -171,7 +172,7 @@ class Event(db.Model):
             "capacity": self.capacity,
             "location": self.location,
             "eventType": self.event_type,
-            "status": self.status,
+            "status": self.status.value if self.status else None,
             "isPublic": self.is_public,
             "registrationRequired": self.registration_required,
             "entryFee": self.entry_fee,
@@ -208,6 +209,7 @@ class Team(db.Model):
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -223,6 +225,7 @@ class Task(db.Model):
     assignee = db.relationship("User", back_populates="tasks_assigned", foreign_keys=[assignee_id])
     event = db.relationship("Event", back_populates="tasks")
     team = db.relationship("Team", back_populates="tasks")
+    organization = db.relationship("Organization", back_populates="tasks")
 
     __table_args__ = (
         db.Index("idx_task_team_status", "team_id", "status"),

@@ -12,13 +12,14 @@ task_bp = Blueprint("task", __name__)
 def create_task(current_user):
     event_id = request.form.get("eventId")
     team_id = request.form.get("teamId")
+    org_id = request.form.get("orgId")
     title = request.form.get("title")
     description = request.form.get("description")
     priority = request.form.get("priority")
     status = request.form.get("status")
     due_date_str = request.form.get("dueDate")
 
-    if not all([event_id, team_id, title, priority, status, due_date_str]):
+    if not all([event_id, team_id, org_id, title, priority, status, due_date_str]):
         return jsonify({"message": "All fields are required"}), 400
 
     try:
@@ -37,6 +38,7 @@ def create_task(current_user):
     new_task = Task(
         event_id=event_id,
         team_id=team_id,
+        org_id=org_id,
         creator_id=creator_id,
         title=title,
         description=description,

@@ -2,7 +2,7 @@ from config import db
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
 from lib import generate_code, token_required
-from models import Organization, OrganizationMember
+from models import Organization, OrganizationMember, UserRole
 
 org_bp = Blueprint("org", __name__)
 
@@ -35,9 +35,17 @@ def create_org(current_user):
         website=website,
         code=code,
     )
+    db.session.add(new_org)
+    db.session.flush()
+
+    org_member = OrganizationMember(
+        user_id=current_user.id,
+        org_id=new_org.id,
+        role=UserRole.LEADER
+    )
+    db.session.add(org_member)
 
     try:
-        db.session.add(new_org)
         db.session.commit()
         return jsonify({"message": "Organization created"}, 201)
     except IntegrityError:
@@ -63,7 +71,7 @@ def get_org_by_id(current_user, org_id):
 
 @org_bp.route("/update/<int:org_id>", methods=["PATCH"])
 @token_required
-def update_org(org_id, current_user):
+def update_org(current_user, org_id):
     org = Organization.query.filter_by(id=org_id).first()
     if not org:
         return jsonify({"message": "Organization not found"}), 404
@@ -85,7 +93,7 @@ def update_org(org_id, current_user):
 
 @org_bp.route("/delete/<int:org_id>", methods=["DELETE"])
 @token_required
-def delete_org(org_id, current_user):
+def delete_org(current_user, org_id):
     org = Organization.query.filter_by(id=org_id).first()
     if not org:
         return jsonify({"message": "Organization not found"}), 404
@@ -105,7 +113,7 @@ def get_org_members(current_user, org_id):
     if not org:
         return jsonify({"message": "Organization not found"}), 404
 
-    members = [membership.user.to_json() for membership in org.memberships]
+    members = [member.user.to_json() for member in org.members]
 
     return jsonify({"data": members}), 200
 
@@ -153,7 +161,7 @@ def get_org_full_details(current_user, org_id):
 
     return jsonify({
         "org": org.to_json(),
-        "members": [m.user.to_json() for m in org.memberships],
+        "members": [m.user.to_json() for m in org.members],
         "teams": [t.to_json() for t in org.teams],
         "events": [e.to_json() for e in org.events],
         "tasks": [t.to_json() for t in org.tasks]
@@ -182,7 +190,7 @@ def join_org(current_user):
         membership = OrganizationMember(
             user_id=current_user.id,
             org_id=org.id,
-            role="member"
+            role=UserRole.MEMBER
         )
 
         db.session.add(membership)

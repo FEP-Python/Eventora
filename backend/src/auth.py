@@ -48,7 +48,7 @@ def login():
     email = request.json.get("email")
     password = request.json.get("password")
 
-    if not all([email, password]):
+    if not email or not password:
         return jsonify({"message": "All fields are required!"}), 400
 
     user = User.query.filter_by(email=email).first()

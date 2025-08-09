@@ -1,9 +1,7 @@
 from config import db
+from models import User
 from lib import token_required
-from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, jsonify, request
-from models import Organization, OrganizationMember
-
 
 user_bp = Blueprint("user", __name__)
 
@@ -67,5 +65,36 @@ def get_user_assigned_tasks(current_user):
     try:
         assigned_tasks = [task.to_json() for task in current_user.tasks_assigned]
         return jsonify({"data": assigned_tasks}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@user_bp.route("/delete/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": "User deleted"}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@user_bp.route("/update/<int:user_id>", methods=["PATCH"])
+def update_user(user_id):
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        data = request.json
+        user.first_name = data.get("firstName", user.first_name)
+        user.last_name = data.get("lastName", user.last_name)
+        user.email = data.get("email", user.email)
+        user.role = data.get("role", user.role)
+
+        db.session.commit()
+
+        return jsonify({"message": "User updated"}), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
