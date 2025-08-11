@@ -3,21 +3,22 @@ from datetime import datetime
 from lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from models import Task, Team, TeamMember, TaskAssignee
+from models import Task, Team, TeamMember, TaskAssignee, TaskStatus, Priority
 
 task_bp = Blueprint("task", __name__)
 
 @task_bp.route("/create", methods=["POST"])
 @token_required
 def create_task(current_user):
-    event_id = request.form.get("eventId")
-    team_id = request.form.get("teamId")
-    org_id = request.form.get("orgId")
-    title = request.form.get("title")
-    description = request.form.get("description")
-    priority = request.form.get("priority")
-    status = request.form.get("status")
-    due_date_str = request.form.get("dueDate")
+    event_id = request.json.get("eventId")
+    team_id = request.json.get("teamId")
+    org_id = request.json.get("orgId")
+    title = request.json.get("title")
+    description = request.json.get("description")
+    priority = request.json.get("priority", Priority.LOW)
+    status = request.json.get("status", TaskStatus.PENDING)
+    due_date_str = request.json.get("dueDate")
+    user_ids = request.json.get("userIds", [])
 
     if not all([event_id, team_id, org_id, title, priority, status, due_date_str]):
         return jsonify({"message": "All fields are required"}), 400
@@ -25,7 +26,7 @@ def create_task(current_user):
     try:
         due_date = datetime.fromisoformat(due_date_str)
     except ValueError:
-        return jsonify({"message": "Invalid due date"}), 400
+        return jsonify({"message": "Invalid dueDate format"}), 400
 
     team = Team.query.get(team_id)
     if not team:
@@ -46,17 +47,34 @@ def create_task(current_user):
         status=status,
         due_date=due_date,
     )
+    db.session.add(new_task)
+    db.session.flush()
+
+    task_id = new_task.id
+    if not task_id or not user_ids:
+        return jsonify({"message": "taskId and userIds are required"}), 400
+
+    if not task_id or not user_ids:
+        return jsonify({"message": "taskId and userIds are required"}), 400
+
+    assigned = []
+    for uid in user_ids:
+        if not TeamMember.query.filter_by(team_id=team.id, user_id=uid).first():
+            continue
+        if not TaskAssignee.query.filter_by(task_id=new_task.id, user_id=uid).first():
+            db.session.add(TaskAssignee(task_id=new_task.id, user_id=uid))
+            assigned.append(uid)
 
     try:
-        db.session.add(new_task)
         db.session.commit()
-        return jsonify({"message": "Task created"}, 201)
     except IntegrityError:
         db.session.rollback()
         return jsonify({"message": "Database integrity error"}), 500
     except Exception as e:
         db.session.rollback()
         return jsonify(({"message": str(e)}), 400)
+
+    return jsonify({"message": "Users assigned", "Assigned User Ids": assigned}), 201
 
 @task_bp.route("/event/<int:event_id>", methods=["GET"])
 @token_required
