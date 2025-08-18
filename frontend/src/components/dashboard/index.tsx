@@ -1,10 +1,17 @@
+'use client';
+
 import { StatsGrid } from "./stats";
 import { QuickActions } from "./quick-actions";
 import { TaskOverview } from "./task-overview";
 import { UpcomingEvents } from "./upcoming-events";
 import { BudgetOverview } from "./budget-overview";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export const Dashboard = () => {
+    const { data: user } = useCurrentUser();
+
+    if (!user) return <p>Loading user...</p>;
+
     return (
         <div>
             <div className="mb-8">
@@ -13,7 +20,7 @@ export const Dashboard = () => {
             </div>
 
             <StatsGrid />
-  
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-1">
                     <QuickActions />

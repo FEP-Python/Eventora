@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormItem, FormControl, FormField, FormMessage, FormLabel } from "@/components/ui/form";
+import { useRegister } from "@/hooks/use-register";
 
 
 const formSchema = z.object({
@@ -30,6 +31,8 @@ const SignUpForm = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const register = useRegister();
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -44,7 +47,12 @@ const SignUpForm = () => {
     const handleSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             setIsLoading(true);
-            console.log(values);
+            register.mutate({
+                firstName: values.firstname,
+                lastName: values.lastname,
+                email: values.email,
+                password: values.password
+            });
         } catch (error) {
             console.log(error);
         } finally {

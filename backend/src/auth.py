@@ -35,7 +35,7 @@ def register():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"message": "User created"}, 201)
+        return jsonify({"message": "Account created"}, 201)
     except IntegrityError:
         db.session.rollback()
         return jsonify({"message": "Database integrity error"}), 500
@@ -61,7 +61,7 @@ def login():
     token = generate_token(user_id=user.id, email=email)
 
     return jsonify({
-        "message": "Login successful",
+        "message": "Logged in successfully",
         "token": token,
         "user": user.to_json()
     }), 200
