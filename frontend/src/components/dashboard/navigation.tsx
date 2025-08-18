@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Calendar, CheckSquare, DollarSign, Home, Settings, Users } from "lucide-react";
+import { Calendar, CheckSquare, DollarSign, Home, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -52,18 +52,18 @@ export const Navigation = () => {
             icon: DollarSign,
             isSelected: isActive("/dashboard/budget")
         },
-        {
-            name: "Analytics",
-            href: "/dashboard/analytics",
-            icon: BarChart3,
-            isSelected: isActive("/dashboard/analytics")
-        },
-        {
-            name: "Settings",
-            href: "/dashboard/settings",
-            icon: Settings,
-            isSelected: isActive("/dashboard/settings")
-        },
+        // {
+        //     name: "Analytics",
+        //     href: "/dashboard/analytics",
+        //     icon: BarChart3,
+        //     isSelected: isActive("/dashboard/analytics")
+        // },
+        // {
+        //     name: "Settings",
+        //     href: "/dashboard/settings",
+        //     icon: Settings,
+        //     isSelected: isActive("/dashboard/settings")
+        // },
     ];
 
     return (

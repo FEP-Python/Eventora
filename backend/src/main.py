@@ -9,9 +9,9 @@ from config import app, db
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(user_bp, url_prefix='/user')
 app.register_blueprint(org_bp, url_prefix='/org')
-app.register_blueprint(event_bp, url_prefix='/event')
 app.register_blueprint(team_bp, url_prefix='/team')
 app.register_blueprint(task_bp, url_prefix='/task')
+app.register_blueprint(event_bp, url_prefix='/event')
 
 if __name__ == "__main__":
     with app.app_context():

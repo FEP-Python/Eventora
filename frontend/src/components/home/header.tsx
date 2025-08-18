@@ -14,10 +14,6 @@ const Header = () => {
         <nav className="bg-white/90 backdrop-blur-md border-b border-[#A3B18A]/20 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        {/* <div className="flex items-center space-x-2">
-                            <Building2 className="h-8 w-8 text-[#3A5A40]" />
-                            <span className="text-xl font-bold text-[#344E41]">Eventora</span>
-                        </div> */}
                         <Image
                             src="/logo.svg"
                             alt="logo"
