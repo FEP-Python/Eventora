@@ -6,13 +6,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
+import { useLogin } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormItem, FormControl, FormField, FormMessage, FormLabel } from "@/components/ui/form";
-import { useLogin } from "@/hooks/use-login";
 
 
 const formSchema = z.object({

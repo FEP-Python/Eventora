@@ -6,12 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { ListView } from "./list-view";
-import { KanbanView } from "./kanban-view";
 
 
 export const Tasks = () => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
 
     const tasks = [
         {
@@ -119,28 +117,10 @@ export const Tasks = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Tasks</h1>
                     <p className="text-gray-600">Manage and track your team&apos;s tasks</p>
                 </div>
-                <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-1 bg-white rounded-lg p-1 border">
-                        <Button
-                            variant={viewMode === "kanban" ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setViewMode("kanban")}
-                        >
-                            Kanban
-                        </Button>
-                        <Button
-                            variant={viewMode === "list" ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setViewMode("list")}
-                        >
-                            List
-                        </Button>
-                    </div>
-                    <Button variant="green" className="flex items-center">
-                        <Plus className="h-4 w-4" />
-                        <span>Add Task</span>
-                    </Button>
-                </div>
+                <Button variant="green" className="flex items-center">
+                    <Plus className="h-4 w-4" />
+                    <span>Add Task</span>
+                </Button>
             </div>
 
             <div className="flex items-center space-x-4 mb-6">
@@ -159,13 +139,7 @@ export const Tasks = () => {
                 </Button>
             </div>
 
-            {viewMode === "list" && (
-                <ListView tasks={filteredTasks} />
-            )}
-
-            {viewMode === "kanban" && (
-                <KanbanView tasks={tasks} />
-            )}
+            <ListView tasks={filteredTasks} />
         </div>
     );
 }
