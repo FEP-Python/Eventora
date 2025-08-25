@@ -35,6 +35,9 @@ def token_required(f):
         if not token:
             return jsonify({"message": "Token is missing"}), 401
 
+        if token.startswith("Bearer "):
+            token = token.split(" ")[1]
+
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
             current_user = User.query.get(data["id"])

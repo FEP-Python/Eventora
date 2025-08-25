@@ -59,6 +59,8 @@ def login():
         return jsonify({"message": "Invalid credentials"}), 401
 
     token = generate_token(user_id=user.id, email=email)
+    if isinstance(token, bytes):
+        token = token.decode("utf-8")
 
     return jsonify({
         "message": "Logged in successfully",

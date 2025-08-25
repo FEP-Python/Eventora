@@ -1,7 +1,12 @@
 import { Dashboard } from '@/components/dashboard';
+import { OrganizationGuard } from '@/components/dashboard/organization/org-guard';
 
 const DashboardPage = () => {
-    return <Dashboard />;
+    return (
+        <OrganizationGuard>
+            <Dashboard />
+        </OrganizationGuard>
+    );
 }
 
 export default DashboardPage;

@@ -2,13 +2,14 @@
 
 import * as z from "zod";
 import Link from "next/link";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 
-import { useRegister } from "@/hooks/use-auth";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useIsAuthenticated, useRegister } from "@/hooks/use-auth";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,11 +30,19 @@ const formSchema = z.object({
     });
 
 const SignUpForm = () => {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const register = useRegister();
+    const { isAuthenticated } = useIsAuthenticated();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, router]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -61,6 +70,10 @@ const SignUpForm = () => {
             setIsLoading(false);
         }
     };
+
+    if (isAuthenticated) {
+        return <div>Redirecting to dashboard...</div>;
+    }
 
     return (
         <Card className="bg-white/95 backdrop-blur-sm border-[#A3B18A]/20 shadow-xl">
