@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormItem, FormControl, FormField, FormMessage, FormLabel } from "@/components/ui/form";
+import { useOrgStore } from "@/hooks/use-org-store";
 
 
 const formSchema = z.object({
@@ -31,6 +32,7 @@ const formSchema = z.object({
 
 const SignUpForm = () => {
     const router = useRouter();
+    const { activeOrg } = useOrgStore();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,9 +42,9 @@ const SignUpForm = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            router.push('/dashboard');
+            router.push(`/orgs/${activeOrg?.id}`);
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, router, activeOrg]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

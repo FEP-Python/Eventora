@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { StatsGrid } from "./stats";
@@ -15,36 +15,35 @@ import { useRequireOrganization } from "@/utils/org-client-guard";
 
 export const Dashboard = () => {
     const router = useRouter();
+    const [isMounted, setIsMounted] = useState(false);
 
     const { activeOrg } = useOrgStore();
-    // const { data: ownedOrgs } = useGetAllOwnedOrg();
-
     const { isAuthenticated } = useIsAuthenticated();
     const { hasOrganizations, isLoading: orgLoading } = useRequireOrganization();
 
     useEffect(() => {
-      // First check auth, then organizations
-      if (!isAuthenticated) {
-        router.push('/login');
-      }
+        if (!isAuthenticated) {
+            return router.push('/sign-in');
+        }
     }, [isAuthenticated, router]);
 
-    // Don't render if not authenticated
+    useEffect(() => {
+        setIsMounted(true);
+    }, [setIsMounted]);
+
     if (!isAuthenticated) {
       return <div>Redirecting to login...</div>;
     }
 
-    // Show loading while checking organizations
     if (orgLoading) {
       return <div>Checking your organizations...</div>;
     }
 
-    // Organization check will handle redirect if no orgs
     if (!hasOrganizations) {
       return <div>Redirecting to organization creation...</div>;
     }
 
-    // if (!ownedOrgs) return <p>Loading organizations...</p>;
+    if(!isMounted) return null;
 
     return (
         <div>

@@ -4,77 +4,34 @@ import { CalendarDays } from "lucide-react";
 
 import { Navigation } from "./navigation";
 import { SidebarUserProfile } from "./sidebar-profile";
-
-import { useGetAllMemberOrg } from "@/hooks/use-org";
 import { OrgSwitcher } from "./organization/org-switcher";
 
+import { useUserAllOrgs } from "@/hooks/use-users-org";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 
-export const Sidebar = () => {
-    const { data: orgs = [] } = useGetAllMemberOrg();
+
+export const DashboardSidebar = () => {
+    const { data: orgs = [] } = useUserAllOrgs();
 
     return (
-        <div className="flex flex-col w-64 bg-white/90 backdrop-blur-sm border-r border-[#A3B18A]/20">
-            <div className="flex items-center justify-center h-16 px-4 border-b border-[#A3B18A]/20 gap-x-2">
-                <CalendarDays className="h-9 w-9 text-[#3A5A40]" />
-                <span className="text-2xl font-bold text-[#344E41]">Eventora</span>
-            </div>
-
-            {/* Organization Selector */}
-            {/* <div className="p-4 border-b border-[#A3B18A]/20">
-                <div className="relative">
-                    <Button
-                        variant="outline"
-                        className="w-full justify-between bg-[#DAD7CD]/50 border-[#A3B18A]/30 hover:bg-[#A3B18A]/10 text-[#344E41]"
-                        onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
-                    >
-                        <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-[#588157] rounded-full"></div>
-                            <span className="truncate">{activeOrg?.name ?? "No Org"}</span>
+        <Sidebar className="flex flex-col w-64 bg-white/90 backdrop-blur-sm border-r border-[#A3B18A]/20">
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <div className="flex items-center justify-center h-16 px-4 border-b border-[#A3B18A]/20 gap-x-2">
+                            <CalendarDays className="h-9 w-9 text-[#3A5A40]" />
+                            <span className="text-2xl font-bold text-[#344E41]">Eventora</span>
                         </div>
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-
-                    {isOrgDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#A3B18A]/20 rounded-md shadow-lg z-10">
-                            {orgs.map((org: Org) => (
-                                <button
-                                    key={org.id}
-                                    className="w-full px-3 py-2 text-left hover:bg-[#DAD7CD]/30 first:rounded-t-md last:rounded-b-md transition-colors"
-                                    onClick={() => {
-                                        setActiveOrg(org);
-                                        setIsOrgDropdownOpen(false);
-                                    }}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="font-medium text-[#344E41]">{org.name}</p>
-                                            <p className="text-xs text-[#3A5A40]">{org.college}</p>
-                                        </div>
-                                        {org.id === activeOrg?.id && (
-                                            <div className="w-2 h-2 bg-[#588157] rounded-full"></div>
-                                        )}
-                                    </div>
-                                </button>
-                            ))}
-                            <div className="border-t border-[#A3B18A]/20 p-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start text-[#3A5A40] hover:bg-[#DAD7CD]/30"
-                                    onClick={() => router.push("/dashboard/create-org")}
-                                >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Create Organization
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div> */}
-
-            <OrgSwitcher orgs={orgs} />
-            <Navigation />
-            <SidebarUserProfile />
-        </div>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+                <OrgSwitcher orgs={orgs} />
+            </SidebarHeader>
+            <SidebarContent>
+                <Navigation />
+            </SidebarContent>
+            <SidebarFooter>
+                <SidebarUserProfile />
+            </SidebarFooter>
+        </Sidebar>
     );
 };

@@ -1,15 +1,22 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { useIsAuthenticated } from '@/hooks/use-auth';
 import { useRequireOrganization } from '@/utils/org-client-guard';
 
 interface OrganizationGuardProps {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 export function OrganizationGuard({ children, fallback }: OrganizationGuardProps) {
+  const { isAuthenticated } = useIsAuthenticated();
   const { hasOrganizations, isLoading, error } = useRequireOrganization();
+
+  if(!isAuthenticated) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div>Redirecting to login...</div>
+    </div>;
+  }
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">

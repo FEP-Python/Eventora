@@ -3,10 +3,10 @@ export type Org = {
     ownerId: number,
     id: number,
     college: string,
-    description: string,
+    description?: string,
     contactEmail: string,
     contactPhone: string
-    website: string,
+    website?: string,
     code: string,
     createdAt: Date,
     updatedAt: Date,

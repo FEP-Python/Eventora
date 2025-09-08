@@ -22,35 +22,35 @@ export const Navigation = () => {
     const navigation = [
         {
             name: "Dashboard",
-            href: "/dashboard",
+            href: "/orgs/1",
             icon: Home,
-            isSelected: isActive("/dashboard")
+            isSelected: isActive("/orgs/1")
         },
         {
             name: "Events",
-            href: "/dashboard/events",
+            href: "/orgs/1/events",
             icon: Calendar,
             badge: noOfEvents,
-            isSelected: isActive("/dashboard/events")
+            isSelected: isActive("/orgs/1/events")
         },
         {
             name: "Teams",
-            href: "/dashboard/teams",
+            href: "/orgs/1/teams",
             icon: Users,
-            isSelected: isActive("/dashboard/teams")
+            isSelected: isActive("/orgs/1/teams")
         },
         {
             name: "Tasks",
-            href: "/dashboard/tasks",
+            href: "/orgs/1/tasks",
             icon: CheckSquare,
             badge: noOfTasks,
-            isSelected: isActive("/dashboard/tasks")
+            isSelected: isActive("/orgs/1/tasks")
         },
         {
             name: "Budget",
-            href: "/dashboard/budget",
+            href: "/orgs/1/budget",
             icon: DollarSign,
-            isSelected: isActive("/dashboard/budget")
+            isSelected: isActive("/orgs/1/budget")
         },
         // {
         //     name: "Analytics",

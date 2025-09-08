@@ -2,13 +2,12 @@
 
 import * as z from "zod";
 import Link from "next/link";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useIsAuthenticated, useLogin } from "@/hooks/use-auth";
+import { useLogin } from "@/hooks/use-auth";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,18 +21,9 @@ const formSchema = z.object({
 });
 
 export const SignInForm = () => {
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     const login = useLogin();
-    const { isAuthenticated } = useIsAuthenticated();
-
-    useEffect(() => {
-        if (isAuthenticated) {
-          router.push('/dashboard');
-        }
-    }, [isAuthenticated, router]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -45,18 +35,11 @@ export const SignInForm = () => {
 
     const handleSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            setIsLoading(true);
             login.mutate(values);
         } catch (error) {
             console.log(error);
-        } finally {
-            setIsLoading(false);
         }
     };
-
-    if (isAuthenticated) {
-        return <div>Redirecting to dashboard...</div>;
-    }
 
     return (
         <Card className="bg-white/95 backdrop-blur-sm border-[#A3B18A]/20 shadow-xl">
@@ -124,9 +107,9 @@ export const SignInForm = () => {
                         <Button
                             type="submit"
                             className="w-full bg-[#3A5A40] hover:bg-[#344E41] text-white"
-                            disabled={isLoading}
+                            disabled={login.isPending}
                         >
-                            {isLoading ? (
+                            {login.isPending ? (
                                 <div className="flex items-center space-x-2">
                                     <Loader2 className="animate-spin h-4 w-4" />
                                     <span>Signing in...</span>

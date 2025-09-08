@@ -23,7 +23,7 @@ def create_org(current_user):
 
     existing_org = Organization.query.filter_by(code=code).first()
     if existing_org:
-        return jsonify({"message": "Organization already exists"}), 400
+        return jsonify({"message": "Club already exists"}), 400
 
     new_org = Organization(
         name=name,
@@ -47,7 +47,7 @@ def create_org(current_user):
 
     try:
         db.session.commit()
-        return jsonify({"message": "Organization created"}, 201)
+        return jsonify(({"message": "Club created", "data": new_org.to_json()}), 201)
     except IntegrityError:
         db.session.rollback()
         return jsonify({"message": "Database integrity error"}), 500
@@ -89,7 +89,7 @@ def update_org(current_user, org_id):
 
     db.session.commit()
 
-    return jsonify({"message": "Organization updated"}), 200
+    return jsonify({"message": "Organization updated", "data": org.to_json()}), 200
 
 @org_bp.route("/delete/<int:org_id>", methods=["DELETE"])
 @token_required

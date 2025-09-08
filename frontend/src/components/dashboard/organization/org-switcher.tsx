@@ -1,6 +1,7 @@
 "use client"
 
-import * as React from "react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation";
 import { ChevronsUpDown, Plus } from "lucide-react"
 
 import {
@@ -9,67 +10,74 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
+
 import { Org } from "@/type"
+import { useOrgStore } from "@/hooks/use-org-store"
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export function OrgSwitcher({ orgs }: { orgs: Org[] }) {
-  const { isMobile } = useSidebar();
-  const [activeOrg, setActiveOrg] = React.useState(orgs[0]);
+    const router = useRouter();
+    const isMobile = useIsMobile();
+  const { activeOrg, setActiveOrg } = useOrgStore();
 
-  if (!activeOrg) {
-    return null;
-  }
+  useEffect(() => {
+    if (orgs.length > 0) {
+      setActiveOrg(activeOrg ? activeOrg : orgs[0]);
+    }
+}, [orgs, setActiveOrg, activeOrg]);
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground bg-[#588157]/10 cursor-pointer pl-4"
+                >
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{activeOrg?.name}</span>
+                </div>
+                <ChevronsUpDown className="ml-auto" />
+                </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="start"
+                side={isMobile ? "bottom" : "right"}
+                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             >
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeOrg.name}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            align="start"
-            side={isMobile ? "bottom" : "right"}
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="text-muted-foreground text-xs">
-              Clubs
-            </DropdownMenuLabel>
-            {orgs.map((org, index) => (
-              <DropdownMenuItem
-                key={org.name}
-                onClick={() => setActiveOrg(org)}
-                className="gap-2 p-2"
-              >
-                {org.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <Plus className="size-4" />
-              </div>
-              <div className="text-muted-foreground font-medium">Create club</div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
+                <DropdownMenuLabel className="text-muted-foreground text-xs">
+                    Your Clubs
+                </DropdownMenuLabel>
+                {orgs.map((org) => (
+                    <DropdownMenuItem
+                        key={org.name}
+                        onClick={() => setActiveOrg(org)}
+                        className="gap-2 p-2 cursor-pointer"
+                    >
+                        {org.name}
+                    </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2 p-2 cursor-pointer" onClick={() => router.push('/create-org')}>
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                        <Plus className="size-4" />
+                    </div>
+                    <div
+                        className="text-muted-foreground font-medium"
+                    >
+                        Create club
+                    </div>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
