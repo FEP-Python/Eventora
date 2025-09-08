@@ -5,7 +5,7 @@ import { create } from "zustand";
 
 interface OrgState {
   activeOrg: Org | null;
-  setActiveOrg: (org: Org) => void;
+  setActiveOrg: (org: Org | null) => void;
 }
 
 export const useOrgStore = create<OrgState>((set) => ({
