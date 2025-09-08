@@ -2,7 +2,7 @@
 
 import * as z from "zod";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormItem, FormControl, FormField, FormMessage, FormLabel } from "@/components/ui/form";
-import { useOrgStore } from "@/hooks/use-org-store";
 
 
 const formSchema = z.object({
@@ -25,7 +24,6 @@ export const SignInForm = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     const login = useLogin();
-    const { setActiveOrg } = useOrgStore();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -38,7 +36,6 @@ export const SignInForm = () => {
     const handleSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             login.mutate(values);
-            setActiveOrg(null);
         } catch (error) {
             console.log(error);
         }
@@ -89,9 +86,7 @@ export const SignInForm = () => {
                                             <Input
                                                 {...field}
                                                 type={showPassword ? "text" : "password"}
-                                                value={field.value}
                                                 placeholder="Enter your password"
-                                                onChange={(e) => field.onChange(e.target.value)}
                                                 className="pl-10 border-[#A3B18A]/30 focus:border-[#588157]"
                                             />
                                             <button

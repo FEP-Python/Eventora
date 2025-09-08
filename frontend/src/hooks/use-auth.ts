@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrgStore } from './use-org-store';
 import { useUserAllOrgs } from './use-users-org';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 interface LoginRequest {
   email: string;
@@ -64,9 +65,11 @@ export const useLogin = () => {
     const { activeOrg, setActiveOrg } = useOrgStore();
     const queryClient = useQueryClient();
 
-    if(hasOrganizations && orgs.length !== 0) {
+    useEffect(() => {
+      if (hasOrganizations && orgs.length !== 0 && !activeOrg) {
         setActiveOrg(orgs[0]);
-    }
+      }
+    }, [hasOrganizations, orgs, activeOrg, setActiveOrg]);
 
   return useMutation({
     mutationFn: loginUser,
@@ -78,7 +81,12 @@ export const useLogin = () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
 
       toast.success(data.message || 'Login successful!');
-      router.push(activeOrg ? `/orgs/${activeOrg.id}` : '/create-org');
+      
+      if (activeOrg) {
+        router.push(`/orgs/${activeOrg.id}`);
+      } else {
+        router.push('/create-org');
+      }
     },
     onError: (error) => {
       console.error('Login error:', error);
