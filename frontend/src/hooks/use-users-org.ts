@@ -7,7 +7,7 @@ interface ApiResponse<T> {
 }
 
 // API functions
-const getUserOwnedOrgs = async (): Promise<Org[]> => {
+export const getUserOwnedOrgs = async (): Promise<Org[]> => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('No authentication token found');
 
@@ -22,7 +22,7 @@ const getUserOwnedOrgs = async (): Promise<Org[]> => {
   return response.data.data;
 };
 
-const getUserMemberOrgs = async (): Promise<Org[]> => {
+export const getUserMemberOrgs = async (): Promise<Org[]> => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('No authentication token found');
 

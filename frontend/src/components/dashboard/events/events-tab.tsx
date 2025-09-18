@@ -1,11 +1,11 @@
 import { Calendar, Clock, Edit, Eye, MapPin, Users } from "lucide-react";
 
+import { Event } from "@/type";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Event } from "@/type";
-import { useRouter } from "next/navigation";
 
 interface EventsTabProps {
     events: Event[];
@@ -17,13 +17,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
     const router = useRouter();
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "confirmed":
+            case "completed":
                 return "bg-green-100 text-green-800"
-            case "planning":
+            case "planned":
                 return "bg-yellow-100 text-yellow-800"
             case "cancelled":
                 return "bg-red-100 text-red-800"
-            case "completed":
+            case "ongoing":
                 return "bg-blue-100 text-blue-800"
             default:
                 return "bg-gray-100 text-gray-800"

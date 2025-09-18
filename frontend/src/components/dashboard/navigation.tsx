@@ -7,12 +7,16 @@ import { Calendar, CheckSquare, DollarSign, Home, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useOrgStore } from "@/hooks/use-org-store";
+import { useOrgEvents } from "@/hooks/use-event";
 
 
 export const Navigation = () => {
     const pathname = usePathname();
+    const { activeOrg } = useOrgStore();
+    const { data } = useOrgEvents(activeOrg?.id || 1);
 
-    const noOfEvents = 3;
+    const noOfEvents = data?.length;
     const noOfTasks = 23;
 
     const isActive = (path: string) => {
@@ -22,48 +26,36 @@ export const Navigation = () => {
     const navigation = [
         {
             name: "Dashboard",
-            href: "/orgs/1",
+            href: `/orgs/${activeOrg?.id}`,
             icon: Home,
-            isSelected: isActive("/orgs/1")
+            isSelected: isActive(`/orgs/${activeOrg?.id}`)
         },
         {
             name: "Events",
-            href: "/orgs/1/events",
+            href: `/orgs/${activeOrg?.id}/events`,
             icon: Calendar,
             badge: noOfEvents,
-            isSelected: isActive("/orgs/1/events")
+            isSelected: isActive(`/orgs/${activeOrg?.id}/events`)
         },
         {
             name: "Teams",
-            href: "/orgs/1/teams",
+            href: `/orgs/${activeOrg?.id}/teams`,
             icon: Users,
-            isSelected: isActive("/orgs/1/teams")
+            isSelected: isActive(`/orgs/${activeOrg?.id}/teams`)
         },
         {
             name: "Tasks",
-            href: "/orgs/1/tasks",
+            href: `/orgs/${activeOrg?.id}/tasks`,
             icon: CheckSquare,
             badge: noOfTasks,
-            isSelected: isActive("/orgs/1/tasks")
+            isSelected: isActive(`/orgs/${activeOrg?.id}/tasks`)
         },
         {
             name: "Budget",
-            href: "/orgs/1/budget",
+            href: `/orgs/${activeOrg?.id}/budget`,
             icon: DollarSign,
-            isSelected: isActive("/orgs/1/budget")
+            isSelected: isActive(`/orgs/${activeOrg?.id}/budget`)
         },
-        // {
-        //     name: "Analytics",
-        //     href: "/dashboard/analytics",
-        //     icon: BarChart3,
-        //     isSelected: isActive("/dashboard/analytics")
-        // },
-        // {
-        //     name: "Settings",
-        //     href: "/dashboard/settings",
-        //     icon: Settings,
-        //     isSelected: isActive("/dashboard/settings")
-        // },
     ];
 
     return (
@@ -79,7 +71,7 @@ export const Navigation = () => {
                     >
                         <item.icon className="h-4 w-4 mr-3" />
                         {item.name}
-                        {item.badge && (
+                        {item.badge && item.badge !== 0 && (
                             <Badge variant="secondary" className="ml-auto bg-[#A3B18A]/20 text-[#3A5A40] rounded-full">
                                 {item.badge}
                             </Badge>

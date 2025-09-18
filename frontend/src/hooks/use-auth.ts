@@ -1,11 +1,13 @@
-import axios from 'axios';
-import { User } from '@/type';
-import { useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useOrgStore } from './use-org-store';
-import { useUserAllOrgs } from './use-users-org';
-import { toast } from 'sonner';
-import { useEffect } from 'react';
+import axios from "axios";
+import { Org, User } from "@/type";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOrgStore } from "./use-org-store";
+import {
+  getUserMemberOrgs,
+  getUserOwnedOrgs,
+} from "./use-users-org";
+import { toast } from "sonner";
 
 interface LoginRequest {
   email: string;
@@ -33,78 +35,94 @@ interface RegisterResponse {
 // API functions
 const loginUser = async (credentials: LoginRequest): Promise<AuthResponse> => {
   const response = await axios.post<AuthResponse>(
-    'http://localhost:5000/api/auth/login',
+    "http://localhost:5000/api/auth/login",
     credentials
   );
   return response.data;
 };
 
-const registerUser = async (userData: RegisterRequest): Promise<RegisterResponse> => {
+const registerUser = async (
+  userData: RegisterRequest
+): Promise<RegisterResponse> => {
   const response = await axios.post<RegisterResponse>(
-    'http://localhost:5000/api/auth/register',
+    "http://localhost:5000/api/auth/register",
     userData
   );
   return response.data;
 };
 
 const getCurrentUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  const userString = localStorage.getItem('user');
+  if (typeof window === "undefined") return null;
+  const userString = localStorage.getItem("user");
   return userString ? JSON.parse(userString) : null;
 };
 
 const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
 };
 
 export const getUserById = async (id: string) => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   const response = await axios.get(`http://localhost:5000/api/user/get/${id}`);
   return response.data;
-}
+};
 
 // Custom hooks
 export const useLogin = () => {
-    const router = useRouter();
-    const { data: orgs=[], hasOrganizations } = useUserAllOrgs();
-    const { activeOrg, setActiveOrg } = useOrgStore();
-    const queryClient = useQueryClient();
-
-    useEffect(() => {
-      if (hasOrganizations && orgs.length !== 0 && !activeOrg) {
-        setActiveOrg(orgs[0]);
-      }
-    }, [hasOrganizations, orgs, activeOrg, setActiveOrg]);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { setActiveOrg } = useOrgStore();
 
   return useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+    onSuccess: async (data) => {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      queryClient.invalidateQueries({ queryKey: ["user"] });
 
-      toast.success(data.message || 'Login successful!');
-      
-      if (activeOrg) {
-        router.push(`/orgs/${activeOrg.id}`);
-      } else {
+      toast.success(data.message || "Login successful!");
+
+      try {
+        const [ownedOrgs, memberOrgs] = await Promise.all([
+          getUserOwnedOrgs(),
+          getUserMemberOrgs(),
+        ]);
+
+        const allOrgs = [...ownedOrgs, ...memberOrgs].reduce((acc, org: Org) => {
+          if (!acc.find((existingOrg: Org) => existingOrg.id === org.id)) {
+            acc.push(org);
+          }
+          return acc;
+        }, []);
+
+        if (allOrgs.length > 0) {
+          setActiveOrg(allOrgs[0]);
+          router.push(`/orgs/${allOrgs[0].id}`);
+        } else {
+          router.push("/create-org");
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["user", "owned-orgs"] });
+        queryClient.invalidateQueries({ queryKey: ["user", "member-orgs"] });
+      } catch (error) {
+        console.log(error);
         router.push('/create-org');
       }
     },
     onError: (error) => {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
 
       // Handle different error response structures
-      let errorMessage = 'Login failed. Please try again.';
+      let errorMessage = "Login failed. Please try again.";
 
-      if(axios.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         if (error?.response?.data?.message) {
-            errorMessage = error.response.data.message;
+          errorMessage = error.response.data.message;
         } else if (error?.message) {
-            errorMessage = error.message;
+          errorMessage = error.message;
         }
       }
 
@@ -119,11 +137,11 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: registerUser,
     onSuccess: () => {
-      toast.success('Account created successfully!');
-      router.push('/sign-in');
+      toast.success("Account created successfully!");
+      router.push("/sign-in");
     },
     onError: (error) => {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
     },
   });
 };
@@ -134,15 +152,15 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: async () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
       queryClient.clear();
 
       return Promise.resolve();
     },
     onSuccess: () => {
-      router.push('/sign-in');
+      router.push("/sign-in");
     },
   });
 };
@@ -150,7 +168,7 @@ export const useLogout = () => {
 // Hook to get current user from localStorage
 export const useCurrentUser = () => {
   return useQuery({
-    queryKey: ['auth', 'current-user'],
+    queryKey: ["auth", "current-user"],
     queryFn: getCurrentUser,
     staleTime: Infinity,
   });
@@ -171,7 +189,7 @@ export const useIsAuthenticated = () => {
 // Hook to get auth token
 export const useAuthToken = () => {
   return useQuery({
-    queryKey: ['auth', 'token'],
+    queryKey: ["auth", "token"],
     queryFn: getAuthToken,
     staleTime: Infinity,
   });
@@ -184,7 +202,7 @@ export const useAuthGuard = () => {
 
   const checkAuth = () => {
     if (!isAuthenticated) {
-      router.push('/sign-in');
+      router.push("/sign-in");
       return false;
     }
     return true;
