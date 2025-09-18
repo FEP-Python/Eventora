@@ -6,7 +6,7 @@ import { useUserAllOrgs } from '@/hooks/use-users-org';
 
 const DashboardPage = () => {
     const router = useRouter();
-    const { setActiveOrg } = useOrgStore();
+    const { setActiveOrg, activeOrg } = useOrgStore();
     const { data: orgs = [], isLoading, error, hasOrganizations } = useUserAllOrgs();
 
     if(isLoading) {
@@ -17,11 +17,11 @@ const DashboardPage = () => {
         return <div>Error loading dashboard</div>;
     }
 
-    if (!hasOrganizations) {
-        return router.push('/create-org');
-    }
+    // if (!hasOrganizations && orgs.length === 0) {
+    //     return router.push('/create-org');
+    // }
 
-    if(orgs && orgs.length !== 0) {
+    if(orgs && orgs.length !== 0 && !activeOrg) {
         setActiveOrg(orgs[0]);
     }
 }

@@ -22,3 +22,26 @@ export type User = {
     created_at: Date;
     updated_at: Date;
 }
+
+export type EventStatus = "draft" | "planned" | "ongoing" | "completed" | "cancelled";
+
+export type Event = {
+    id: number;
+    orgId: number;
+    creatorId: number;
+    title: string;
+    description: string;
+    startDate: Date;
+    endDate: Date;
+    registrationDeadline: Date;
+    capacity: number;
+    location: string;
+    eventType: string;
+    status: EventStatus;
+    isPublic: boolean;
+    registrationRequired: boolean;
+    entryFee: number;
+    certificateProvided: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}

@@ -3,7 +3,7 @@
 import z from "zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { Building2, GraduationCap, Mail, Phone, Globe, MessageSquare } from "lucide-react"
+import { Building2, GraduationCap, Mail, Phone, Globe, MessageSquare, ArrowLeft } from "lucide-react"
 
 import { useCreateOrg } from "@/hooks/use-org"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useRouter } from "next/navigation"
 
 
 const formSchema = z.object({
@@ -27,6 +28,7 @@ const formSchema = z.object({
 export function CreateOrgForm() {
     const [isLoading, setIsLoading] = useState(false);
 
+    const router = useRouter();
     const createOrgMutation = useCreateOrg();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -55,8 +57,14 @@ export function CreateOrgForm() {
     return (
         <div className="bg-white shadow-xl border-0 rounded-lg">
             {/* Register Your Club Heading */}
-            <div className="bg-[#588157] text-white rounded-t-lg p-8">
-                <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <div className="bg-[#588157] text-white rounded-t-lg p-8 flex items-center relative">
+                <div className="flex items-center gap-1 absolute left-4">
+                    <ArrowLeft className="h-4 w-4" />
+                    <h2 className="text-lg cursor-pointer" onClick={() => router.back()}>
+                        Back
+                    </h2>
+                </div>
+                <h2 className="text-2xl font-semibold flex items-center justify-center text-center w-full gap-2">
                     <Building2 className="h-6 w-6" />
                     Register Your Club
                 </h2>
