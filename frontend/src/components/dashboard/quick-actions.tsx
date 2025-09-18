@@ -2,16 +2,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Calendar, CheckSquare, DollarSign, FileText, Plus, UserPlus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useModalStore } from "@/hooks/use-modal-store";
 
 export const QuickActions = () => {
+    const openModal = useModalStore(state => state.openModal);
     const actions = [
-        {
-            title: "Create Event",
-            description: "Plan a new event",
-            icon: Calendar,
-            color: "bg-[#588157]",
-            href: "/dasboard/event/create",
-        },
+        // {
+        //     title: "Create Event",
+        //     description: "Plan a new event",
+        //     icon: Calendar,
+        //     color: "bg-[#588157]",
+        //     href: "/dasboard/event/create",
+        // },
         {
             title: "Add Task",
             description: "Create new task",
@@ -51,7 +53,43 @@ export const QuickActions = () => {
                 </CardTitle>
                 <CardDescription className="text-[#3A5A40]">Common tasks and shortcuts</CardDescription>
             </CardHeader>
+            {/* <CardContent className="space-y-3">
+                {actions.map((action, index) => (
+                    <Link
+                        key={index}
+                        href={action.href}
+                        className="block hover:bg-[#DAD7CD]/30 transition-colors"
+                    >
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
+                        >
+                            <div className={`p-2 rounded-md mr-3 text-white ${action.color}`}>
+                                <action.icon className="h-4 w-4" />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-medium text-[#344E41]">{action.title}</p>
+                                <p className="text-xs text-[#3A5A40]">{action.description}</p>
+                            </div>
+                        </Button>
+                    </Link>
+                ))}
+            </CardContent> */}
             <CardContent className="space-y-3">
+                <div onClick={() => openModal("createEvent")} className="block hover:bg-[#DAD7CD]/30 transition-colors">
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
+                    >
+                        <div className={`p-2 rounded-md mr-3 text-white bg-[#588157]`}>
+                            <Calendar className="h-4 w-4" />
+                        </div>
+                        <div className="text-left">
+                            <p className="font-medium text-[#344E41]">Create Event</p>
+                            <p className="text-xs text-[#3A5A40]">Plan a new event</p>
+                        </div>
+                    </Button>
+                </div>
                 {actions.map((action, index) => (
                     <Link
                         key={index}

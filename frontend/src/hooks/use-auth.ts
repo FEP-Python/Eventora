@@ -58,6 +58,12 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('token');
 };
 
+export const getUserById = async (id: string) => {
+  if (typeof window === 'undefined') return null;
+  const response = await axios.get(`http://localhost:5000/api/user/get/${id}`);
+  return response.data;
+}
+
 // Custom hooks
 export const useLogin = () => {
     const router = useRouter();

@@ -68,6 +68,16 @@ def get_user_assigned_tasks(current_user):
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
+@user_bp.route("/get/<int:user_id>", methods=["GET"])
+def get_user_by_id(user_id):
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        return jsonify({"data": user.to_json()}), 200
+    except Exception as e:
+        return jsonify({"message": 'Error geting user'}), 500
+
 @user_bp.route("/delete/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
     try:
