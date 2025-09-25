@@ -1,3 +1,5 @@
+import { EventDetails } from "@/components/dashboard/events/event-details";
+
 interface EventIdPageProps {
     params: Promise<{
         orgId: string,
@@ -7,13 +9,8 @@ interface EventIdPageProps {
 
 const EventIdPage = async ({ params }: EventIdPageProps) => {
     const { orgId, eventId } = await params;
-    return (
-        <div>
-            OrgId: {orgId}
-            <br />
-            eventId: {eventId}
-        </div>
-    )
+
+    return <EventDetails orgId={Number(orgId)} eventId={Number(eventId)} />
 }
 
 export default EventIdPage;

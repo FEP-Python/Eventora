@@ -1,6 +1,8 @@
-import axios from "axios";
-import { Event, EventStatus } from "@/type";
+"use client";
+
+import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
+import { Event, EventStatus } from "@/type";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -44,6 +46,10 @@ interface SearchEventsParams {
 }
 
 interface ApiResponse {
+    message: string;
+}
+
+interface ApiErrorResponse {
     message: string;
 }
 
@@ -120,6 +126,25 @@ const getUpcomingEvents = async (orgId: number): Promise<Event[]> => {
     return response.data.data;
 };
 
+// Helper function to extract error message
+const getErrorMessage = (error: unknown): string => {
+    if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<ApiErrorResponse>;
+        if (axiosError.response?.data?.message) {
+            return axiosError.response.data.message;
+        }
+        if (axiosError.message) {
+            return axiosError.message;
+        }
+    }
+
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    return "An unexpected error occurred";
+};
+
 // Mutation Hooks
 export const useCreateEvent = () => {
     const router = useRouter();
@@ -141,19 +166,9 @@ export const useCreateEvent = () => {
                 router.push(`/orgs/${variables.orgId}/events/${data.event.id}`);
             }
         },
-        onError: (error: Error) => {
+        onError: (error: unknown) => {
             console.error("Error creating event:", error);
-
-            let errorMessage = "Failed to create event. Please try again.";
-
-            if (axios.isAxiosError(error)) {
-                if (error?.response?.data?.message) {
-                    errorMessage = error.response.data.message;
-                } else if (error?.message) {
-                    errorMessage = error.message;
-                }
-            }
-
+            const errorMessage = getErrorMessage(error) || "Failed to create event. Please try again.";
             toast.error(errorMessage);
         },
     });
@@ -189,17 +204,9 @@ export const useUpdateEvent = () => {
                 console.error("Navigation error:", navigationError);
             }
         },
-        onError: (error: Error) => {
+        onError: (error: unknown) => {
             console.error("Error updating event:", error);
-
-            let errorMessage = "Failed to update event. Please try again.";
-
-            if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            } else if (error?.message) {
-                errorMessage = error.message;
-            }
-
+            const errorMessage = getErrorMessage(error) || "Failed to update event. Please try again.";
             toast.error(errorMessage);
         },
     });
@@ -226,17 +233,9 @@ export const useDeleteEvent = () => {
                 console.error("Navigation error:", navigationError);
             }
         },
-            onError: (error: Error) => {
+        onError: (error: unknown) => {
             console.error("Error deleting event:", error);
-
-            let errorMessage = "Failed to delete event. Please try again.";
-
-            if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            } else if (error?.message) {
-                errorMessage = error.message;
-            }
-
+            const errorMessage = getErrorMessage(error) || "Failed to delete event. Please try again.";
             toast.error(errorMessage);
         },
     });

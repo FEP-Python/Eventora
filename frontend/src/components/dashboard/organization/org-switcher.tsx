@@ -21,18 +21,27 @@ import {
 import { Org } from "@/type"
 import { useOrgStore } from "@/hooks/use-org-store"
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 export function OrgSwitcher({ orgs }: { orgs: Org[] }) {
     const router = useRouter();
     const isMobile = useIsMobile();
-  const { activeOrg, setActiveOrg } = useOrgStore();
+    const queryClient = useQueryClient();
+    const { activeOrg, setActiveOrg } = useOrgStore();
 
   useEffect(() => {
     if (orgs.length > 0) {
       setActiveOrg(activeOrg ? activeOrg : orgs[0]);
     }
-}, [orgs, setActiveOrg, activeOrg]);
+  }, [orgs, setActiveOrg, activeOrg]);
+
+  const switchOrg = (org: Org) => {
+    setActiveOrg(org);
+    queryClient.invalidateQueries({ queryKey: ["orgs"] });
+    queryClient.invalidateQueries({ queryKey: ["org", org.id] });
+    router.push(`/orgs/${org.id}`);
+  }
 
   return (
     <SidebarMenu>
@@ -60,7 +69,7 @@ export function OrgSwitcher({ orgs }: { orgs: Org[] }) {
                 {orgs.map((org) => (
                     <DropdownMenuItem
                         key={org.name}
-                        onClick={() => setActiveOrg(org)}
+                        onClick={() => switchOrg(org)}
                         className="gap-2 p-2 cursor-pointer"
                     >
                         {org.name}
