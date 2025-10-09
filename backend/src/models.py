@@ -159,8 +159,8 @@ class Event(db.Model):
         db.Index("idx_event_org_title", "org_id", "title"),
     )
 
-    def to_json(self):
-        return {
+    def to_json(self, include_creator=False):
+        data = {
             "id": self.id,
             "orgId": self.org_id,
             "creatorId": self.creator_id,
@@ -179,6 +179,10 @@ class Event(db.Model):
             "certificateProvided": self.certificate_provided,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }
+        if include_creator and self.creator:
+            data["creator"] = self.creator.to_json()
+        
+        return data
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -205,6 +209,9 @@ class Team(db.Model):
             "name": self.name,
             "description": self.description,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
+            "members": [member.user.to_json() for member in self.members],
+            "tasks": [task.to_json() for task in self.tasks] if self.tasks else []
         }
 
 class Task(db.Model):

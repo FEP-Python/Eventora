@@ -42,6 +42,43 @@ export type Event = {
     registrationRequired: boolean;
     entryFee: number;
     certificateProvided: boolean;
+    creator?: User;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export type Team = {
+    id: number;
+    orgId: number;
+    leaderId: number;
+    name: string;
+    description: string;
+    createdAt: Date;
+    updatedAt: Date;
+    members: User[];
+    organization: Org;
+    tasks: Task[];
+}
+
+export type TaskPriority = "low" | "medium" | "high" | "critical";
+export type TaskStatus = "pending" | "in_progress" | "completed" | "overdue";
+
+export type Task = {
+    id: number;
+    orgId: number;
+    eventId: number;
+    teamId: number;
+    creatorId: number;
+    assigneeId: number;
+    title: string;
+    description: string;
+    priority: TaskPriority;
+    status: TaskStatus;
+    dueDate: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    assignee?: User;
+    event?: Event;
+    team?: Team;
+    organization?: Org;
 }

@@ -1,6 +1,6 @@
 import { Teams } from "@/components/dashboard/teams/teams";
 
-const TeamsPage = () => {
+const TeamsPage = async () => {
     return <Teams />;
 }
 

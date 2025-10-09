@@ -1,395 +1,26 @@
-// "use client";
-
-// import * as z from "zod";
-// import { useForm } from "react-hook-form";
-
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import { useModalStore } from "@/hooks/use-modal-store";
-
-// import { Input } from "@/components/ui/input";
-// import { Button } from "@/components/ui/button";
-// import { ResponsiveModal } from "@/components/responsive-modal";
-// import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-// import { cn } from "@/lib/utils";
-// import { format } from "date-fns";
-// import { CalendarIcon } from "lucide-react";
-// import { Calendar } from "@/components/ui/calendar";
-// import { Switch } from "@/components/ui/switch";
-// import { useOrgEventManagement } from "@/hooks/use-event";
-// import { useOrgStore } from "@/hooks/use-org-store";
-
-
-// const formSchema = z.object({
-//     title: z.string().min(1, "Name is required"),
-//     description: z.string().optional(),
-//     startDate: z.date(),
-//     endDate: z.date(),
-//     registrationDeadline: z.date(),
-//     capacity: z.number().min(1, 'Capacity must be atleast one!'),
-//     location: z.string(),
-//     eventType: z.string(),
-//     status: z.string(),
-//     isPublic: z.boolean(),
-//     registrationRequired: z.boolean(),
-//     entryFee: z.number().min(0, 'Entry fee cannot be negative'),
-//     certificateProvided: z.boolean(),
-// });
-
-// export const CreateEventModal = () => {
-//     const { activeOrg } = useOrgStore();
-//     const { isOpen, closeModal } = useModalStore();
-//     const { createEvent, isCreating } = useOrgEventManagement(activeOrg?.id || 1);
-
-//     const form = useForm<z.infer<typeof formSchema>>({
-//         resolver: zodResolver(formSchema),
-//         defaultValues: {
-//             title: "",
-//             description: "",
-//             startDate: new Date(),
-//             endDate: new Date(),
-//             registrationDeadline: new Date(),
-//             capacity: 0,
-//             location: "",
-//             eventType: "",
-//             status: "",
-//             entryFee: 0,
-//             isPublic: false,
-//             registrationRequired: false,
-//             certificateProvided: false,
-//         }
-//     });
-
-//     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-//         const requestData = {
-//             ...data,
-//             status: data.status as "draft" | "planned" | "ongoing" | "completed" | "cancelled",
-//             orgId: activeOrg?.id || 0,
-//         }
-//         createEvent(requestData);
-//     }
-
-//     return (
-//         <ResponsiveModal
-//             title="Create Event"
-//             open={isOpen}
-//             onOpenChange={closeModal}
-//         >
-//             <Form {...form}>
-//                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                         <FormField
-//                             name="title"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem>
-//                                     <FormLabel>Title</FormLabel>
-//                                     <FormControl>
-//                                         <Input placeholder="Coding workshop, etc." {...field} />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                         <FormField
-//                             name="eventType"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem>
-//                                     <FormLabel>Event Type</FormLabel>
-//                                     <FormControl>
-//                                         <Input placeholder="Workshop, Meeting, etc." {...field} />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                     </div>
-//                     <FormField
-//                         name="description"
-//                         control={form.control}
-//                         render={({ field }) => (
-//                             <FormItem>
-//                                 <FormLabel>Description</FormLabel>
-//                                 <FormControl>
-//                                     <Input placeholder="Info about the event..." {...field} />
-//                                 </FormControl>
-//                                 <FormMessage />
-//                             </FormItem>
-//                         )}
-//                     />
-//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-//                         <FormField
-//                             name="startDate"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem className="flex flex-col">
-//                                     <FormLabel>Start Date</FormLabel>
-//                                     <Popover>
-//                                         <PopoverTrigger asChild>
-//                                             <FormControl>
-//                                                 <Button
-//                                                     variant={"outline"}
-//                                                     className={cn(
-//                                                         "pl-3 text-left font-normal",
-//                                                         !field.value && "text-muted-foreground"
-//                                                     )}
-//                                                 >
-//                                                     {field.value ? (
-//                                                         format(field.value, "PPP")
-//                                                     ) : (
-//                                                         <span>Pick a date</span>
-//                                                     )}
-//                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-//                                                 </Button>
-//                                             </FormControl>
-//                                         </PopoverTrigger>
-//                                         <PopoverContent className="w-auto p-0" align="start">
-//                                             <Calendar
-//                                                 mode="single"
-//                                                 selected={field.value}
-//                                                 onSelect={field.onChange}
-//                                                 // disabled={(date) =>
-//                                                 //     date > new Date() || date < new Date("1900-01-01")
-//                                                 // }
-//                                                 captionLayout="dropdown"
-//                                             />
-//                                         </PopoverContent>
-//                                     </Popover>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                         <FormField
-//                             name="endDate"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem className="flex flex-col">
-//                                     <FormLabel>End Date</FormLabel>
-//                                     <Popover>
-//                                         <PopoverTrigger asChild>
-//                                             <FormControl>
-//                                                 <Button
-//                                                     variant={"outline"}
-//                                                     className={cn(
-//                                                         "pl-3 text-left font-normal",
-//                                                         !field.value && "text-muted-foreground"
-//                                                     )}
-//                                                 >
-//                                                     {field.value ? (
-//                                                         format(field.value, "PPP")
-//                                                     ) : (
-//                                                         <span>Pick a date</span>
-//                                                     )}
-//                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-//                                                 </Button>
-//                                             </FormControl>
-//                                         </PopoverTrigger>
-//                                         <PopoverContent className="w-auto p-0" align="start">
-//                                             <Calendar
-//                                                 mode="single"
-//                                                 selected={field.value}
-//                                                 onSelect={field.onChange}
-//                                                 // disabled={(date) =>
-//                                                 //     date > new Date() || date < new Date("1900-01-01")
-//                                                 // }
-//                                                 captionLayout="dropdown"
-//                                             />
-//                                         </PopoverContent>
-//                                     </Popover>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                     </div>
-//                     <FormField
-//                         name="registrationDeadline"
-//                         control={form.control}
-//                         render={({ field }) => (
-//                             <FormItem className="flex flex-col">
-//                                 <FormLabel>Registration Deadline</FormLabel>
-//                                 <Popover>
-//                                     <PopoverTrigger asChild>
-//                                         <FormControl>
-//                                             <Button
-//                                                 variant={"outline"}
-//                                                 className={cn(
-//                                                     "pl-3 text-left font-normal",
-//                                                     !field.value && "text-muted-foreground"
-//                                                 )}
-//                                             >
-//                                                 {field.value ? (
-//                                                     format(field.value, "PPP")
-//                                                 ) : (
-//                                                     <span>Pick a date</span>
-//                                                 )}
-//                                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-//                                             </Button>
-//                                         </FormControl>
-//                                     </PopoverTrigger>
-//                                     <PopoverContent className="w-auto p-0" align="start">
-//                                         <Calendar
-//                                             mode="single"
-//                                             selected={field.value}
-//                                             onSelect={field.onChange}
-//                                             // disabled={(date) =>
-//                                             //     date > new Date() || date < new Date("1900-01-01")
-//                                             // }
-//                                             captionLayout="dropdown"
-//                                         />
-//                                     </PopoverContent>
-//                                 </Popover>
-//                                 <FormMessage />
-//                             </FormItem>
-//                         )}
-//                     />
-//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-//                         <FormField
-//                             name="location"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem>
-//                                     <FormLabel>Location</FormLabel>
-//                                     <FormControl>
-//                                         <Input placeholder="Location" {...field} />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                         <FormField
-//                             name="capacity"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem>
-//                                     <FormLabel>Capacity</FormLabel>
-//                                     <FormControl>
-//                                         <Input 
-//                                             {...field} 
-//                                             value={field.value || ''}
-//                                             onChange={(e) => {
-//                                                 const value = e.target.value;
-//                                                 field.onChange(value === '' ? undefined : Number(value))
-//                                             }}
-//                                             type="number" 
-//                                             placeholder="Max. no. of participants" 
-//                                         />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                     </div>
-//                     <FormField
-//                         name="entryFee"
-//                         control={form.control}
-//                         render={({ field }) => (
-//                             <FormItem>
-//                                 <FormLabel>Entry Fee</FormLabel>
-//                                 <FormControl>
-//                                     <Input 
-//                                         {...field} 
-//                                         value={field.value || ''}
-//                                         onChange={(e) => {
-//                                             const value = e.target.value;
-//                                             field.onChange(value === '' ? undefined : Number(value))
-//                                         }}
-//                                         type="number" 
-//                                     />
-//                                 </FormControl>
-//                                 <FormMessage />
-//                             </FormItem>
-//                         )}
-//                     />
-//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                         <FormField
-//                             name="isPublic"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem className="flex items-center w-full">
-//                                     <FormLabel>Make this event public</FormLabel>
-//                                     <FormControl>
-//                                         <Switch 
-//                                             checked={field.value} 
-//                                             onCheckedChange={field.onChange} 
-//                                             className="!cursor-pointer" 
-//                                         />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                         <FormField
-//                             name="registrationRequired"
-//                             control={form.control}
-//                             render={({ field }) => (
-//                                 <FormItem className="flex items-center w-full">
-//                                     <FormLabel>Registration Required?</FormLabel>
-//                                     <FormControl>
-//                                         <Switch 
-//                                             checked={field.value} 
-//                                             onCheckedChange={field.onChange} 
-//                                             className="!cursor-pointer" 
-//                                         />
-//                                     </FormControl>
-//                                     <FormMessage />
-//                                 </FormItem>
-//                             )}
-//                         />
-//                     </div>
-//                     <FormField
-//                         name="certificateProvided"
-//                         control={form.control}
-//                         render={({ field }) => (
-//                             <FormItem className="flex items-center w-full">
-//                                 <FormLabel>Certificate Provided?</FormLabel>
-//                                 <FormControl>
-//                                     <Switch 
-//                                         checked={field.value} 
-//                                         onCheckedChange={field.onChange} 
-//                                         className="!cursor-pointer" 
-//                                     />
-//                                 </FormControl>
-//                                 <FormMessage />
-//                             </FormItem>
-//                         )}
-//                     />
-//                     <Button
-//                         type="submit"
-//                         variant="green"
-//                         disabled={isCreating}
-//                     >
-//                         {isCreating ? "Creating..." : "Create"}
-//                     </Button>
-//                 </form>
-//             </Form>
-//         </ResponsiveModal>
-//     );
-// }
-
-
 "use client";
 
 import * as z from "zod";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
+import { CalendarIcon } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+import { useOrgStore } from "@/hooks/use-org-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useModalStore } from "@/hooks/use-modal-store";
+import { useOrgEventManagement } from "@/hooks/use-event";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ResponsiveModal } from "@/components/responsive-modal";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useOrgEventManagement } from "@/hooks/use-event";
-import { useOrgStore } from "@/hooks/use-org-store";
+import { Calendar } from "@/components/ui/calendar";
+import { ResponsiveModal } from "@/components/responsive-modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const formSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -406,7 +37,6 @@ const formSchema = z.object({
     entryFee: z.number().min(0, 'Entry fee cannot be negative'),
     certificateProvided: z.boolean(),
 }).refine((data) => {
-    // Ensure end date is after start date
     return data.endDate >= data.startDate;
 }, {
     message: "End date must be after start date",
@@ -424,8 +54,10 @@ const formSchema = z.object({
 
 export const CreateEventModal = () => {
     const { activeOrg } = useOrgStore();
-    const { isOpen, closeModal } = useModalStore();
+    const { isOpen, closeModal, type } = useModalStore();
     const { createEvent, isCreating } = useOrgEventManagement(activeOrg?.id || 1);
+
+    const isEventModalOpen = isOpen && type === "createEvent";
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -476,7 +108,7 @@ export const CreateEventModal = () => {
     return (
         <ResponsiveModal
             title="Create Event"
-            open={isOpen}
+            open={isEventModalOpen}
             onOpenChange={closeModal}
         >
             <Form {...form}>

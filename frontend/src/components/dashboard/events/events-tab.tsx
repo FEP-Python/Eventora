@@ -1,4 +1,4 @@
-import { Calendar, Clock, Edit, Eye, MapPin, Users } from "lucide-react";
+import { Calendar, Clock, Edit, Eye, MapPin, Trash, Users } from "lucide-react";
 
 import { Event } from "@/type";
 import { useRouter } from "next/navigation";
@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { DeleteEventDialog } from "./delete-event-dialog";
 
 interface EventsTabProps {
     events: Event[];
@@ -15,6 +17,9 @@ interface EventsTabProps {
 
 export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
     const router = useRouter();
+    const [eventId, setEventId] = useState<number | null>(null);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "completed":
@@ -90,9 +95,18 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                         <Eye className="h-4 w-4 mr-1" />
                                         View
                                     </Button>
-                                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 bg-transparent"
+                                        onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}
+                                    >
                                         <Edit className="h-4 w-4 mr-1" />
                                         Edit
+                                    </Button>
+                                    <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                        <Trash className="h-4 w-4 mr-1" />
+                                        Delete
                                     </Button>
                                 </div>
                             </CardContent>
@@ -151,9 +165,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}>
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                            <Trash className="h-4 w-4 mr-1" />
+                                            Delete
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -213,9 +231,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}>
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                            <Trash className="h-4 w-4 mr-1" />
+                                            Delete
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -275,9 +297,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}>
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                            <Trash className="h-4 w-4 mr-1" />
+                                            Delete
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -337,9 +363,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}>
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                            <Trash className="h-4 w-4 mr-1" />
+                                            Delete
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -399,9 +429,13 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                                        <Button variant="outline" size="sm" className="flex-1 bg-transparent" onClick={() => router.push(`/orgs/${event.orgId}/events/${event.id}/edit`)}>
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
+                                        </Button>
+                                        <Button variant="destructive" size="sm" className="flex-1" onClick={() => { setOpenDeleteDialog(true); setEventId(event.id); }}>
+                                            <Trash className="h-4 w-4 mr-1" />
+                                            Delete
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -410,6 +444,11 @@ export const EventsTab = ({ events, searchTerm }: EventsTabProps) => {
                     </div>
                 )}
             </TabsContent>
+            <DeleteEventDialog
+                eventId={eventId!}
+                open={openDeleteDialog}
+                onClose={setOpenDeleteDialog}
+            />
         </Tabs>
     );
 }

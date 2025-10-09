@@ -1,18 +1,24 @@
 import { create } from "zustand";
 
-type ModalType = "createEvent" | "createTask" | "addMember" | null;
+type ModalType =
+  | "createEvent"
+  | "createTeam"
+  | "inviteMember"
+  | "joinUrl"
+  | "manageMembers"
+  | "teamMembersManagement"
+  | null;
 
 interface ModalState {
-  isOpen: boolean;
   type: ModalType;
-  openModal: (type: ModalType) => void;
+  isOpen: boolean;
+  openModal: (type: Exclude<ModalType, null>) => void;
   closeModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
-  isOpen: false,
   type: null,
-  data: null,
+  isOpen: false,
   openModal: (type) => set({ isOpen: true, type }),
   closeModal: () => set({ isOpen: false, type: null }),
 }));

@@ -74,11 +74,28 @@ def get_team_by_id(current_user, team_id):
     team = Team.query.get(team_id)
     if not team:
         return jsonify({"message": "Team not found"}), 404
+    
+    # Verify user is member of the organization
+    is_user_in_org = OrganizationMember.query.filter_by(
+        user_id=current_user.id,
+        org_id=team.org_id
+    ).first()
+    if not is_user_in_org:
+        return jsonify({"message": "Not authorized"}), 403
+        
     return jsonify({"data": team.to_json()}), 200
 
 @team_bp.route("/get-all/<int:org_id>", methods=["GET"])
 @token_required
 def get_teams_by_org_id(current_user, org_id):
+    # Verify user is member of the organization
+    is_user_in_org = OrganizationMember.query.filter_by(
+        user_id=current_user.id,
+        org_id=org_id
+    ).first()
+    if not is_user_in_org:
+        return jsonify({"message": "Not authorized"}), 403
+    
     teams = Team.query.filter_by(org_id=org_id).all()
     json_teams = list(map(lambda team: team.to_json(), teams))
     return jsonify({"data": json_teams}), 200
@@ -171,6 +188,14 @@ def add_member_to_team(current_user, team_id):
     if not member_id:
         return jsonify({"message": "Member ID is required"}), 400
 
+    # Verify member is in the organization
+    is_member_in_org = OrganizationMember.query.filter_by(
+        user_id=member_id,
+        org_id=team.org_id
+    ).first()
+    if not is_member_in_org:
+        return jsonify({"message": "User is not a member of this organization"}), 400
+
     # Check if already a member
     if TeamMember.query.filter_by(team_id=team.id, user_id=member_id).first():
         return jsonify({"message": "User already in team"}), 400
@@ -180,7 +205,11 @@ def add_member_to_team(current_user, team_id):
     db.session.add(new_member)
     db.session.commit()
 
-    return jsonify({"message": "Member added"}), 200
+    # Return updated team data with members
+    return jsonify({
+        "message": "Member added",
+        "data": team.to_json()
+    }), 200
 
 @team_bp.route("/remove-member/<int:team_id>", methods=["DELETE"])
 @token_required

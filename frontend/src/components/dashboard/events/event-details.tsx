@@ -1,13 +1,14 @@
 'use client';
 
-import Link from "next/link";
+import { useState } from "react";
+import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { useEvent } from "@/hooks/use-event";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowLeft, Award, Building, Calendar, CheckCircle, Clock, Edit, Globe, Lock, Mail, MapPin, Phone, Share2, User, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { AlertCircle, ArrowLeft, Award, Building, Calendar, CheckCircle, Clock, Edit, Globe, Lock, Mail, MapPin, Trash, User, Users } from "lucide-react";
+import { DeleteEventDialog } from "./delete-event-dialog";
 
 
 interface EventDetailsProps {
@@ -15,57 +16,10 @@ interface EventDetailsProps {
     eventId: number;
 }
 
-const eventData = {
-    capacity: 100,
-    certificateProvided: true,
-    createdAt: "2025-09-18T06:50:33.673130",
-    creatorId: 1,
-    description:
-        "A comprehensive coding workshop covering modern web development technologies including React, Node.js, and database integration. Perfect for beginners and intermediate developers looking to enhance their skills.",
-    endDate: "Mon, 29 Sep 2025 18:30:00 GMT",
-    entryFee: 50,
-    eventType: "Workshop",
-    id: 2,
-    isPublic: false,
-    location: "DYP Akurdi",
-    orgId: 1,
-    registrationDeadline: "Sat, 20 Sep 2025 18:30:00 GMT",
-    registrationRequired: true,
-    startDate: "Wed, 24 Sep 2025 18:30:00 GMT",
-    status: "planned",
-    title: "Coding Workshop: Modern Web Development",
-}
-
-// Mock additional data that might be useful
-const additionalData = {
-    organizer: {
-        name: "Tech Club",
-        contact: "tech@college.edu",
-        phone: "+91 98765 43210",
-    },
-    registrations: 45,
-    speakers: [
-        { name: "John Doe", role: "Senior Developer", company: "Tech Corp" },
-        { name: "Jane Smith", role: "Full Stack Engineer", company: "StartupXYZ" },
-    ],
-    agenda: [
-        { time: "18:30 - 19:00", topic: "Registration & Welcome" },
-        { time: "19:00 - 20:00", topic: "Introduction to Modern Web Development" },
-        { time: "20:00 - 20:15", topic: "Break" },
-        { time: "20:15 - 21:15", topic: "Hands-on Coding Session" },
-        { time: "21:15 - 21:30", topic: "Q&A and Closing" },
-    ],
-    requirements: [
-        "Laptop with internet connection",
-        "Basic knowledge of HTML/CSS",
-        "Code editor (VS Code recommended)",
-        "Node.js installed",
-    ],
-}
-
 export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
     const router = useRouter();
     const { data, isLoading } = useEvent(eventId);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
     const formatTime = (dateString: Date) => {
         return new Date(dateString).toLocaleTimeString("en-US", {
@@ -103,13 +57,13 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
     }
 
     const isRegistrationOpen = () => {
-        const deadline = new Date(eventData.registrationDeadline)
+        const deadline = new Date(data?.registrationDeadline || new Date())
         const now = new Date()
         return now < deadline
     }
 
     const daysUntilEvent = () => {
-        const startDate = new Date(eventData.startDate)
+        const startDate = new Date(data?.startDate || new Date())
         const now = new Date()
         const diffTime = startDate.getTime() - now.getTime()
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -137,12 +91,10 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
             <div className="max-w-7xl mx-auto">
                 {/* Back Navigation */}
                 <div className="mb-6">
-                    <Link href="/events">
-                        <Button variant="outline" onClick={() => router.back()}>
-                            <ArrowLeft className="h-4 w-4" />
-                            Back to Events
-                        </Button>
-                    </Link>
+                    <Button variant="outline" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Events
+                    </Button>
                 </div>
 
                 {/* Event Header */}
@@ -222,19 +174,22 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex flex-col sm:flex-row lg:flex-col gap-3 lg:min-w-[200px]">
-                                    {data.registrationRequired && isRegistrationOpen() && (
-                                        <Button className="bg-[#3A5A40] hover:bg-[#344E41] text-white">
-                                            <User className="h-4 w-4 mr-2" />
-                                            Register Now
-                                        </Button>
-                                    )}
+                                <div className="flex flex-col sm:flex-row gap-3 lg:min-w-[200px]">
                                     <Button
                                         variant="outline"
+                                        onClick={() => router.push(`/orgs/${orgId}/events/${eventId}/edit`)}
                                         className="border-[#A3B18A]/30 text-[#3A5A40] hover:bg-[#A3B18A]/10 bg-transparent"
                                     >
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Edit Event
+                                        <Edit className="h-4 w-4" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => setOpenDeleteDialog(true)}
+                                        className="hover:bg-destructive/70"
+                                    >
+                                        <Trash className="h-4 w-4" />
+                                        Delete
                                     </Button>
                                 </div>
                             </div>
@@ -243,7 +198,7 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                 </div>
 
                 {/* Registration Status Alert */}
-                {eventData.registrationRequired && (
+                {data.registrationRequired && (
                     <div className="mb-6">
                         <Card
                             className={`border-l-4 ${isRegistrationOpen() ? "border-l-[#588157] bg-[#588157]/5" : "border-l-red-500 bg-red-50"
@@ -307,7 +262,7 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-[#3A5A40] mb-1">Created</p>
-                                        <p className="text-[#344E41] font-bold">{format(eventData.createdAt, 'do MMM yyyy')}</p>
+                                        <p className="text-[#344E41] font-bold">{format(data.createdAt, 'do MMM yyyy')}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-[#3A5A40] mb-1">Registeration</p>
@@ -336,21 +291,26 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                             <CardContent className="space-y-3">
                                 <div className="flex items-center space-x-3">
                                     <Building className="h-5 w-5 text-[#588157]" />
-                                    <span className="text-[#344E41] font-medium">{additionalData.organizer.name}</span>
+                                    <span className="text-[#344E41] font-medium">{data.creator?.firstName + ' ' + data.creator?.lastName}</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <Mail className="h-5 w-5 text-[#588157]" />
-                                    <span className="text-[#3A5A40]">{additionalData.organizer.contact}</span>
+                                    <span className="text-[#3A5A40]">{data.creator?.email}</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
-                                    <Phone className="h-5 w-5 text-[#588157]" />
-                                    <span className="text-[#3A5A40]">{additionalData.organizer.phone}</span>
+                                    <User className="h-5 w-5 text-[#588157]" />
+                                    <span className="text-[#3A5A40] capitalize">{data.creator?.role}</span>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
             </div>
+            <DeleteEventDialog 
+                eventId={eventId}
+                open={openDeleteDialog}
+                onClose={setOpenDeleteDialog}
+            />
         </main>
     )
 }

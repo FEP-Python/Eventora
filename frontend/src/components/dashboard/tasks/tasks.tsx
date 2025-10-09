@@ -133,10 +133,6 @@ export const Tasks = () => {
                         className="pl-10 bg-[#f9fafb] focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                <Button className="flex items-center">
-                    <Filter className="h-4 w-4" />
-                    <span>Filter</span>
-                </Button>
             </div>
 
             <ListView tasks={filteredTasks} />

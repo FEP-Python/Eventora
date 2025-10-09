@@ -292,10 +292,15 @@ def get_all_events_by_org_id(current_user, org_id):
 @event_bp.route("/get/<int:event_id>", methods=["GET"])
 @token_required
 def get_event_by_id(current_user, event_id):
-    event = Event.query.get(event_id)
+    event = db.session.query(Event).options(
+        db.joinedload(Event.creator)
+    ).filter(Event.id == event_id).first()
+    
     if not event:
         return jsonify({"message": "Event not found"}), 404
-    return jsonify({"data": event.to_json()}), 200
+    
+    # Use include_creator=True to automatically include creator info
+    return jsonify({"data": event.to_json(include_creator=True)}), 200
 
 @event_bp.route("/update/<int:event_id>", methods=["PATCH"])
 @token_required

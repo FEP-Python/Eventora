@@ -213,7 +213,6 @@ export const useUpdateEvent = () => {
 };
 
 export const useDeleteEvent = () => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -226,12 +225,6 @@ export const useDeleteEvent = () => {
             queryClient.invalidateQueries({ queryKey: ["events"] });
 
             toast.success(message || "Event deleted successfully!");
-
-            try {
-                router.push("/dashboard");
-            } catch (navigationError) {
-                console.error("Navigation error:", navigationError);
-            }
         },
         onError: (error: unknown) => {
             console.error("Error deleting event:", error);
