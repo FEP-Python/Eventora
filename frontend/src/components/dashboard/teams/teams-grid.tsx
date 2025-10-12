@@ -8,8 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Team, Task } from "@/type"
 import { useModalStore } from "@/hooks/use-modal-store";
-import { useOrgStore } from "@/hooks/use-org-store";
-import { toast } from "sonner";
+import { CreateTeamModal } from "./create-team-modal";
 
 interface TeamsGridProps {
     teams: Team[];
@@ -74,18 +73,6 @@ const getCategoryBadgeClass = (category: TeamCategory) => {
 
 export const TeamsGrid = ({ teams }: TeamsGridProps) => {
     const { openModal } = useModalStore();
-    const { activeOrg } = useOrgStore();
-
-    const copyJoinUrl = () => {
-        if (!activeOrg?.code) {
-            toast.error("Organization code not found");
-            return;
-        }
-
-        const joinUrl = `${window.location.origin}/join-club?code=${activeOrg.code}`;
-        navigator.clipboard.writeText(joinUrl);
-        toast.success("Join URL copied to clipboard!");
-    };
 
     if (!teams || teams.length === 0) {
         return (
@@ -113,10 +100,10 @@ export const TeamsGrid = ({ teams }: TeamsGridProps) => {
                     onClick={() => openModal("createTeam")}
                     className="flex items-center gap-2 rounded-lg shadow-md"
                 >
-                    <Link href="/orgs/new/team">
+                    <div onClick={() => openModal("createTeam")}>
                         <PlusCircle className="h-5 w-5" />
                         Create Your First Team
-                    </Link>
+                    </div>
                 </Button>
             </div>
         );
@@ -251,6 +238,7 @@ export const TeamsGrid = ({ teams }: TeamsGridProps) => {
                     </Card>
                 );
             })}
+            <CreateTeamModal />
         </div>
     )
 }

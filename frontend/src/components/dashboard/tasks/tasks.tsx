@@ -1,12 +1,11 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Filter, Plus, Search, Calendar, Users, AlertCircle } from "lucide-react";
+import { Plus, Search, Calendar, Users, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,7 +14,7 @@ import { CreateTaskModal } from "./create-task-modal";
 import { useOrgId } from "@/hooks/use-org-id";
 import { useTasksByTeam } from "@/hooks/use-task";
 import { useOrgTeams } from "@/hooks/use-team";
-import { Task, TaskPriority, TaskStatus } from "@/type";
+import { Task } from "@/type";
 
 type FilterType = "all" | "pending" | "in_progress" | "completed" | "overdue";
 type SortType = "dueDate" | "priority" | "status" | "title";
@@ -32,22 +31,22 @@ export const Tasks = () => {
     const { data: teams, isLoading: teamsLoading } = useOrgTeams(parseInt(orgId));
 
     // Get tasks for the selected team
-    const { 
-        data: tasks = [], 
-        isLoading: tasksLoading, 
+    const {
+        data: tasks = [],
+        isLoading: tasksLoading,
         error: tasksError,
-        refetch: refetchTasks 
+        refetch: refetchTasks
     } = useTasksByTeam(selectedTeamId || 0);
 
     // Filter and sort tasks
     const filteredAndSortedTasks = useMemo(() => {
-        let filtered = tasks.filter((task: Task) => {
-            const matchesSearch = 
+        const filtered = tasks.filter((task: Task) => {
+            const matchesSearch =
             task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 task.description?.toLowerCase().includes(searchTerm.toLowerCase());
-            
+
             const matchesFilter = filter === "all" || task.status === filter;
-            
+
             return matchesSearch && matchesFilter;
         });
 
@@ -58,11 +57,11 @@ export const Tasks = () => {
                     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
                 case "priority":
                     const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-                    return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+                    return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) -
                            (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
                 case "status":
                     const statusOrder = { pending: 1, in_progress: 2, completed: 3, overdue: 4 };
-                    return (statusOrder[a.status as keyof typeof statusOrder] || 0) - 
+                    return (statusOrder[a.status as keyof typeof statusOrder] || 0) -
                            (statusOrder[b.status as keyof typeof statusOrder] || 0);
                 case "title":
                     return a.title.localeCompare(b.title);
@@ -126,13 +125,13 @@ export const Tasks = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Tasks</h1>
                     <p className="text-gray-600">Manage and track your team&apos;s tasks</p>
                 </div>
-                <Button 
-                    variant="green" 
+                <Button
+                    variant="green"
                     className="flex items-center"
                     onClick={() => setShowCreateModal(true)}
                     disabled={!selectedTeamId}
                 >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4" />
                     Add Task
                 </Button>
             </div>
@@ -228,7 +227,7 @@ export const Tasks = () => {
                         className="pl-10 bg-[#f9fafb] focus:bg-white focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                     <Select value={filter} onValueChange={(value: FilterType) => setFilter(value)}>
                         <SelectTrigger className="w-32">
@@ -242,26 +241,14 @@ export const Tasks = () => {
                             <SelectItem value="overdue">Overdue</SelectItem>
                         </SelectContent>
                     </Select>
-
-                    <Select value={sortBy} onValueChange={(value: SortType) => setSortBy(value)}>
-                        <SelectTrigger className="w-32">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="dueDate">Due Date</SelectItem>
-                            <SelectItem value="priority">Priority</SelectItem>
-                            <SelectItem value="status">Status</SelectItem>
-                            <SelectItem value="title">Title</SelectItem>
-                        </SelectContent>
-                    </Select>
                 </div>
             </div>
 
             {/* Tasks List */}
             {!selectedTeamId ? (
-                <Alert>
+                <Alert className="bg-[#588157]/10 max-w-lg">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
+                    <AlertDescription className="text-black">
                         Please select a team to view tasks.
                     </AlertDescription>
                 </Alert>
@@ -284,22 +271,22 @@ export const Tasks = () => {
                         <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
                         <p className="text-gray-600 mb-4">
-                            {searchTerm || filter !== "all" 
-                                ? "No tasks match your current filters." 
+                            {searchTerm || filter !== "all"
+                                ? "No tasks match your current filters."
                                 : "Get started by creating your first task."
                             }
                         </p>
                         {!searchTerm && filter === "all" && (
                             <Button variant="green" onClick={() => setShowCreateModal(true)}>
-                                <Plus className="h-4 w-4 mr-2" />
+                                <Plus className="h-4 w-4" />
                                 Create Task
                             </Button>
                         )}
                     </CardContent>
                 </Card>
             ) : (
-                <ListView 
-                    tasks={filteredAndSortedTasks} 
+                <ListView
+                    tasks={filteredAndSortedTasks}
                     onTaskUpdate={refetchTasks}
                     onTaskDelete={refetchTasks}
                 />

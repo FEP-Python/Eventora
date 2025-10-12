@@ -1,36 +1,43 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckSquare, DollarSign, Users, Calendar } from "lucide-react";
 
-export const StatsGrid = () => {
+
+interface StatsGridProps {
+    totalEvents: number;
+    totalMembers: number;
+    totalTeams: number;
+}
+
+export const StatsGrid = ({ totalEvents, totalMembers, totalTeams }: StatsGridProps) => {
     const stats = [
         {
-            title: "Active Events",
-            value: "12",
-            change: "+2 from last month",
+            title: "Events",
+            value: totalEvents,
+            change: "Total Events",
             icon: Calendar,
             color: "text-[#588157]",
             bgColor: "bg-[#588157]/10",
         },
         {
-            title: "Team Members",
-            value: "48",
-            change: "+5 new members",
+            title: "Members",
+            value: totalMembers,
+            change: "Active members in club",
             icon: Users,
             color: "text-[#A3B18A]",
             bgColor: "bg-[#A3B18A]/10",
         },
         {
-            title: "Pending Tasks",
-            value: "23",
-            change: "8 due this week",
+            title: "Teams",
+            value: totalTeams,
+            change: "Total teams in club",
             icon: CheckSquare,
             color: "text-[#3A5A40]",
             bgColor: "bg-[#3A5A40]/10",
         },
         {
-            title: "Budget Used",
+            title: "Budget",
             value: "₹45,000",
-            change: "75% of allocated",
+            change: "Total budget of club",
             icon: DollarSign,
             color: "text-[#588157]",
             bgColor: "bg-[#588157]/10",

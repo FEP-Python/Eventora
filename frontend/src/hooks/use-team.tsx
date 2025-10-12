@@ -86,7 +86,7 @@ const getTeamById = async (id: number): Promise<Team> => {
     return response.data.data;
 };
 
-const getAllTeamsByOrg = async (orgId: number): Promise<Team[]> => {
+export const getAllTeamsByOrg = async (orgId: number): Promise<Team[]> => {
     const response = await axios.get(`http://localhost:5000/api/team/get-all/${orgId}`, {
         headers: getAuthHeaders()
     });
@@ -122,6 +122,7 @@ const getTeamMembers = async (id: number) => {
     const response = await axios.get(`http://localhost:5000/api/team/members/${id}`, {
         headers: getAuthHeaders()
     });
+    console.log('Res from backend for members: ', response);
     return response.data.data;
 };
 
@@ -311,7 +312,6 @@ export const useTeamMembers = (teamId: number) => {
     return useQuery({
         queryKey: ["teams", "org", teamId],
         queryFn: () => getTeamMembers(teamId),
-        enabled: !!teamId,
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };

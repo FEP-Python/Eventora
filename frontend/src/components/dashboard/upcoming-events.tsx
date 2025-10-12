@@ -1,46 +1,19 @@
 import Link from "next/link";
+import { Event } from "@/type";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, MoreHorizontal, Users } from "lucide-react";
+import { Calendar, MapPin, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const UpcomingEvents = () => {
-    const events = [
-        {
-            id: 1,
-            title: "Tech Symposium 2024",
-            date: "Mar 15, 2024",
-            time: "9:00 AM",
-            location: "Main Auditorium",
-            attendees: 150,
-            status: "confirmed",
-            priority: "high",
-            budget: "₹25,000",
-        },
-        {
-            id: 2,
-            title: "Coding Workshop",
-            date: "Mar 18, 2024",
-            time: "2:00 PM",
-            location: "Computer Lab",
-            attendees: 45,
-            status: "planning",
-            priority: "medium",
-            budget: "₹5,000",
-        },
-        {
-            id: 3,
-            title: "Alumni Meetup",
-            date: "Mar 22, 2024",
-            time: "6:00 PM",
-            location: "Conference Hall",
-            attendees: 80,
-            status: "confirmed",
-            priority: "low",
-            budget: "₹15,000",
-        },
-    ]
 
+interface UpcomingEventsProps {
+    orgId: number;
+    events: Event[] | [];
+}
+
+export const UpcomingEvents = ({ orgId, events }: UpcomingEventsProps) => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case "confirmed":
@@ -54,19 +27,6 @@ export const UpcomingEvents = () => {
         }
     }
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case "high":
-                return "bg-red-100 text-red-800 border-red-200"
-            case "medium":
-                return "bg-[#A3B18A]/20 text-[#3A5A40] border-[#A3B18A]/30"
-            case "low":
-                return "bg-[#588157]/20 text-[#3A5A40] border-[#588157]/30"
-            default:
-                return "bg-[#DAD7CD]/50 text-[#3A5A40] border-[#A3B18A]/30"
-        }
-    }
-
     return (
         <Card className="bg-white/80 backdrop-blur-sm border-[#A3B18A]/20">
             <CardHeader>
@@ -74,11 +34,11 @@ export const UpcomingEvents = () => {
                     <div>
                         <CardTitle className="flex items-center space-x-2 text-[#344E41]">
                             <Calendar className="h-5 w-5" />
-                            <span className="font-semibold text-lg">Upcoming Events</span>
+                            <span className="font-semibold text-lg">Recent Events</span>
                         </CardTitle>
-                        <CardDescription className="text-[#3A5A40]">Events scheduled for the next 30 days</CardDescription>
+                        <CardDescription className="text-[#3A5A40]">Events scheduled very recently</CardDescription>
                     </div>
-                    <Link href="/dashboard/events">
+                    <Link href={`/orgs/${orgId}/events`}>
                         <Button
                             variant="outline"
                             size="sm"
@@ -102,17 +62,10 @@ export const UpcomingEvents = () => {
                                     <div className="flex items-center space-x-4 text-sm text-[#3A5A40]">
                                         <div className="flex items-center space-x-1">
                                             <Calendar className="h-4 w-4" />
-                                            <span>{event.date}</span>
-                                        </div>
-                                        <div className="flex items-center space-x-1">
-                                            <Clock className="h-4 w-4" />
-                                            <span>{event.time}</span>
+                                            <span>{format(new Date(event.startDate), "dd MMMM yyyy")} - {format(new Date(event.endDate), "dd MMMM yyyy")}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <Button variant="ghost" size="sm" className="text-[#3A5A40] hover:bg-[#DAD7CD]/30">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
                             </div>
 
                             <div className="flex items-center justify-between">
@@ -123,14 +76,12 @@ export const UpcomingEvents = () => {
                                     </div>
                                     <div className="flex items-center space-x-1">
                                         <Users className="h-4 w-4" />
-                                        <span>{event.attendees} attendees</span>
+                                        <span>{event.capacity || 'NA'} capacity</span>
                                     </div>
-                                    <span className="font-medium text-[#344E41]">{event.budget}</span>
                                 </div>
 
                                 <div className="flex items-center space-x-2">
-                                    <Badge className={getPriorityColor(event.priority)}>{event.priority}</Badge>
-                                    <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
+                                    <Badge className={cn('capitalize', getStatusColor(event.status))}>{event.status}</Badge>
                                 </div>
                             </div>
                         </div>

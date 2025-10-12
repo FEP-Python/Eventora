@@ -20,8 +20,8 @@ interface CreateTaskRequest {
 interface UpdateTaskRequest {
     title?: string;
     description?: string;
-    priority?: TaskPriority;
-    status?: TaskStatus;
+    priority?: string;
+    status?: string;
     dueDate?: string;
 }
 

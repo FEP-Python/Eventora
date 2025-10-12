@@ -6,40 +6,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { useCreateTask } from "@/hooks/use-task";
+import { useUpdateTask } from "@/hooks/use-task";
 import { useOrgEvents } from "@/hooks/use-event";
-import { TaskPriority, TaskStatus } from "@/type";
+import { Task } from "@/type";
 import { toast } from "sonner";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useOrgMembers } from "@/hooks/use-org";
 
-interface CreateTaskModalProps {
+interface EditTaskModalProps {
     isOpen: boolean;
     onClose: () => void;
-    teamId: number;
+    task: Task | null;
     orgId: number;
-    onTaskCreated: () => void;
+    teamId: number;
+    onTaskUpdated: () => void;
 }
 
-export const CreateTaskModal = ({
+export const EditTaskModal = ({
     isOpen,
     onClose,
+    task,
     orgId,
     teamId,
-    onTaskCreated
-}: CreateTaskModalProps) => {
-    const router = useRouter();
+    onTaskUpdated
+}: EditTaskModalProps) => {
     const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        priority: "medium" as TaskPriority,
-        status: "pending" as TaskStatus,
-        dueDate: undefined as Date | undefined,
-        eventId: "",
-        userIds: [] as number[]
+        title: task?.title || "",
+        description: task?.description || "",
+        priority: (task?.priority || "medium") as string,
+        status: (task?.status || "pending") as string,
+        dueDate: task?.dueDate || undefined as Date | undefined,
+        eventId: task?.eventId || "",
+        userIds: task?.assignee ? [task.assignee.id] : [] as number[]
     });
 
     const [showCalendar, setShowCalendar] = useState(false);
@@ -52,6 +49,7 @@ export const CreateTaskModal = ({
     ];
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // Close calendar on outside click
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
@@ -102,7 +100,7 @@ export const CreateTaskModal = ({
         );
 
         if (!isDateDisabled(selectedDate)) {
-            setFormData({ ...formData, dueDate: selectedDate });
+            setFormData(prev => ({ ...prev, dueDate: selectedDate }));
             setShowCalendar(false);
         }
     };
@@ -154,26 +152,30 @@ export const CreateTaskModal = ({
     };
 
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-    // Popover will be uncontrolled (simpler, matches shadcn example)
 
-    const createTaskMutation = useCreateTask();
+    const updateTaskMutation = useUpdateTask();
     const { data: events, isLoading: eventsLoading } = useOrgEvents(orgId);
-    const { data: members, isLoading: membersLoading } = useOrgMembers(orgId);
 
+    // Populate form when task changes
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && task) {
             setFormData({
-                title: "",
-                description: "",
-                priority: "medium",
-                status: "pending",
-                dueDate: undefined,
-                eventId: "",
-                userIds: []
+                title: task.title || "",
+                description: task.description || "",
+                priority: task.priority || "medium",
+                status: task.status || "pending",
+                dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+                eventId: task.eventId?.toString() || "",
+                userIds: task.assigneeId ? [task.assigneeId] : []
             });
-            setSelectedEventId(null);
+            setSelectedEventId(task.eventId || null);
+
+            // Set calendar to task's due date month
+            if (task.dueDate) {
+                setCurrentMonth(new Date(task.dueDate));
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, task]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -188,33 +190,23 @@ export const CreateTaskModal = ({
             return;
         }
 
+        if (!task) return;
+
         try {
-            await createTaskMutation.mutateAsync({
-                eventId: selectedEventId || 0,
-                teamId,
-                orgId,
+            await updateTaskMutation.mutateAsync({
+                id: task.id,
                 title: formData.title.trim(),
                 description: formData.description.trim() || undefined,
                 priority: formData.priority,
                 status: formData.status,
                 dueDate: formData.dueDate.toISOString(),
-                userIds: formData.userIds
             });
 
-            onTaskCreated();
+            onTaskUpdated();
             onClose();
         } catch (error) {
-            console.error("Error creating task:", error);
+            console.error("Error updating task:", error);
         }
-    };
-
-    const handleUserToggle = (userId: number) => {
-        setFormData(prev => ({
-            ...prev,
-            userIds: prev.userIds.includes(userId)
-                ? prev.userIds.filter(id => id !== userId)
-                : [...prev.userIds, userId]
-        }));
     };
 
     const handleEventChange = (eventId: string) => {
@@ -227,9 +219,9 @@ export const CreateTaskModal = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Create New Task</DialogTitle>
+                    <DialogTitle>Edit Task</DialogTitle>
                     <DialogDescription>
-                        Create a new task for your team. Fill in the details below.
+                        Update task details below.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -259,13 +251,13 @@ export const CreateTaskModal = ({
                             />
                         </div>
 
-                        {/* Priority and Status - half width each */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                            <div className="flex flex-col gap-y-2 col-span-1">
+                        {/* Priority and Status */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className=" flex flex-col gap-y-2">
                                 <Label htmlFor="priority">Priority</Label>
                                 <Select
                                     value={formData.priority}
-                                    onValueChange={(value: TaskPriority) => setFormData(prev => ({ ...prev, priority: value }))}
+                                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, priority: value }))}
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue />
@@ -282,7 +274,7 @@ export const CreateTaskModal = ({
                                 <Label htmlFor="status">Status</Label>
                                 <Select
                                     value={formData.status}
-                                    onValueChange={(value: TaskStatus) => setFormData(prev => ({ ...prev, status: value }))}
+                                    onValueChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue />
@@ -297,17 +289,15 @@ export const CreateTaskModal = ({
                             </div>
                         </div>
 
-                        {/* Due Date using shadcn Calendar */}
+                        {/* Due Date */}
                         <div className="relative" ref={calendarRef}>
-                            <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-2">
-                                Due Date *
-                            </label>
+                            <Label htmlFor="due_date">Due Date *</Label>
 
                             <button
                                 type="button"
                                 id="due_date"
                                 onClick={() => setShowCalendar(!showCalendar)}
-                                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors flex items-center justify-between"
+                                className="w-full px-4 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors flex items-center justify-between mt-2"
                             >
                                 <span className={formData.dueDate ? 'text-gray-900' : 'text-gray-400'}>
                                     {formData.dueDate
@@ -321,9 +311,9 @@ export const CreateTaskModal = ({
                                 <Calendar className="h-5 w-5 text-gray-400" />
                             </button>
 
-                            {/* Calendar Popup */}
+                            {/* Calendar Popup - positioned above */}
                             {showCalendar && (
-                                <div className="absolute z-50 bottom-[75%] mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-80">
+                                <div className="absolute z-50 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-80">
                                     {/* Calendar Header */}
                                     <div className="flex items-center justify-between mb-4">
                                         <button
@@ -385,66 +375,14 @@ export const CreateTaskModal = ({
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        {/* User Assignment from Team Members */}
-                        <div className="grid gap-2">
-                            <Label>Assign to Users (Optional)</Label>
-                            <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
-                                {membersLoading ? (
-                                    <div className="text-sm text-gray-500">Loading users...</div>
-                                ) : members && members.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {members.map((member: any) => {
-                                            // member may be either a user or an object containing user
-                                            const user = member?.user ?? member;
-                                            return (
-                                                <div key={user.id} className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`user-${user.id}`}
-                                                        checked={formData.userIds.includes(user.id)}
-                                                        onCheckedChange={() => handleUserToggle(user.id)}
-                                                    />
-                                                    <Label
-                                                        htmlFor={`user-${user.id}`}
-                                                        className="text-sm font-normal cursor-pointer"
-                                                    >
-                                                        {user.firstName} {user.lastName}
-                                                        {user?.email ? ` (${user.email})` : ""}
-                                                    </Label>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-500">No users in this team</span>
-                                        <Button type="button" variant="outline" size="sm" onClick={() => router.push(`/orgs/${orgId}/teams`)}>
-                                            Add members
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                            {formData.userIds.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {formData.userIds.map((userId) => {
-                                        const user = members?.map((m: any) => m.user ?? m).find((u: any) => u.id === userId);
-                                        return user ? (
-                                            <Badge key={userId} variant="secondary" className="text-xs">
-                                                {user.firstName} {user.lastName}
-                                            </Badge>
-                                        ) : null;
-                                    })}
-                                </div>
-                            )}
-                        </div>
                     </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={createTaskMutation.isPending}>
-                            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+                        <Button type="submit" disabled={updateTaskMutation.isPending}>
+                            {updateTaskMutation.isPending ? "Saving..." : "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </form>

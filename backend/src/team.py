@@ -74,7 +74,7 @@ def get_team_by_id(current_user, team_id):
     team = Team.query.get(team_id)
     if not team:
         return jsonify({"message": "Team not found"}), 404
-    
+
     # Verify user is member of the organization
     is_user_in_org = OrganizationMember.query.filter_by(
         user_id=current_user.id,
@@ -82,7 +82,7 @@ def get_team_by_id(current_user, team_id):
     ).first()
     if not is_user_in_org:
         return jsonify({"message": "Not authorized"}), 403
-        
+
     return jsonify({"data": team.to_json()}), 200
 
 @team_bp.route("/get-all/<int:org_id>", methods=["GET"])
@@ -95,7 +95,7 @@ def get_teams_by_org_id(current_user, org_id):
     ).first()
     if not is_user_in_org:
         return jsonify({"message": "Not authorized"}), 403
-    
+
     teams = Team.query.filter_by(org_id=org_id).all()
     json_teams = list(map(lambda team: team.to_json(), teams))
     return jsonify({"data": json_teams}), 200

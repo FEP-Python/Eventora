@@ -1,18 +1,14 @@
+'use client';
+
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Calendar, Edit, MoreHorizontal, User, Trash2, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Calendar, Edit, User, Trash2, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { Task, TaskPriority, TaskStatus } from "@/type"
-import { useTaskActions } from "@/hooks/use-task"
-import { toast } from "sonner"
+import { EditTaskModal } from "./edit-task-modal";
+import { useOrgId } from "@/hooks/use-org-id";
+import { DeleteTaskDialog } from "./delete-task-dialog";
 
 interface ListViewProps {
     tasks: Task[];
@@ -20,15 +16,10 @@ interface ListViewProps {
     onTaskDelete?: () => void;
 }
 
-export const ListView = ({ tasks, onTaskUpdate, onTaskDelete }: ListViewProps) => {
+export const ListView = ({ tasks }: ListViewProps) => {
+    const orgId = useOrgId();
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [editForm, setEditForm] = useState({
-        title: "",
-        description: "",
-        priority: "medium" as TaskPriority,
-        status: "pending" as TaskStatus,
-        dueDate: ""
-    });
+    const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
     const getPriorityColor = (priority: TaskPriority) => {
         switch (priority) {
@@ -82,46 +73,6 @@ export const ListView = ({ tasks, onTaskUpdate, onTaskDelete }: ListViewProps) =
         return new Date(dueDate) < new Date() && new Date(dueDate).toDateString() !== new Date().toDateString();
     }
 
-    const handleEditTask = (task: Task) => {
-        setEditingTask(task);
-        setEditForm({
-            title: task.title,
-            description: task.description || "",
-            priority: task.priority,
-            status: task.status,
-            dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ""
-        });
-    }
-
-    const handleSaveEdit = () => {
-        if (!editingTask) return;
-
-        const { updateTask } = useTaskActions(editingTask.id);
-        
-        updateTask({
-            title: editForm.title,
-            description: editForm.description,
-            priority: editForm.priority,
-            status: editForm.status,
-            dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : undefined
-        });
-
-        setEditingTask(null);
-        onTaskUpdate?.();
-    }
-
-    const handleDeleteTask = (taskId: number) => {
-        const { deleteTask } = useTaskActions(taskId);
-        deleteTask();
-        onTaskDelete?.();
-    }
-
-    const handleStatusChange = (taskId: number, newStatus: TaskStatus) => {
-        const { updateTask } = useTaskActions(taskId);
-        updateTask({ status: newStatus });
-        onTaskUpdate?.();
-    }
-
     return (
         <>
             <Card>
@@ -138,12 +89,12 @@ export const ListView = ({ tasks, onTaskUpdate, onTaskDelete }: ListViewProps) =
                                         <div className="flex items-center space-x-3 mb-2">
                                             <h3 className="font-medium text-gray-900">{task.title}</h3>
                                             <Badge className={getPriorityColor(task.priority)}>
-                                                {task.priority}
+                                                <span className="capitalize">{task.priority}</span>
                                             </Badge>
                                             <Badge className={getStatusColor(task.status)}>
                                                 <div className="flex items-center space-x-1">
                                                     {getStatusIcon(task.status)}
-                                                    <span>{task.status.replace("_", " ")}</span>
+                                                    <span className="capitalize">{task.status.replace("_", " ")}</span>
                                                 </div>
                                             </Badge>
                                             {isOverdue(task.dueDate) && task.status !== "completed" && (
@@ -165,45 +116,17 @@ export const ListView = ({ tasks, onTaskUpdate, onTaskDelete }: ListViewProps) =
                                                 <span>Due {formatDate(task.dueDate)}</span>
                                             </div>
                                             {task.eventId && (
-                                                <span>Event ID: {task.eventId}</span>
+                                                <span>Event Id: {task.eventId}</span>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleEditTask(task)}>
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleStatusChange(task.id, "completed")}
-                                                    disabled={task.status === "completed"}
-                                                >
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                                    Mark Complete
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleStatusChange(task.id, "in_progress")}
-                                                    disabled={task.status === "in_progress"}
-                                                >
-                                                    <Clock className="h-4 w-4 mr-2" />
-                                                    Start Progress
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleDeleteTask(task.id)}
-                                                    className="text-red-600"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <div className="flex items-center gap-x-2">
+                                        <Button size="icon" variant="outline" onClick={() => setEditingTask(task)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="icon" variant="destructive" onClick={() => setDeletingTask(task)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -230,89 +153,21 @@ export const ListView = ({ tasks, onTaskUpdate, onTaskDelete }: ListViewProps) =
                 </CardContent>
             </Card>
 
-            {/* Edit Task Dialog */}
-            <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Task</DialogTitle>
-                        <DialogDescription>
-                            Make changes to the task details below.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="title">Title</Label>
-                            <Input
-                                id="title"
-                                value={editForm.title}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                                id="description"
-                                value={editForm.description}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                rows={3}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="priority">Priority</Label>
-                                <Select 
-                                    value={editForm.priority} 
-                                    onValueChange={(value: TaskPriority) => setEditForm(prev => ({ ...prev, priority: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="low">Low</SelectItem>
-                                        <SelectItem value="medium">Medium</SelectItem>
-                                        <SelectItem value="high">High</SelectItem>
-                                        <SelectItem value="critical">Critical</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="status">Status</Label>
-                                <Select 
-                                    value={editForm.status} 
-                                    onValueChange={(value: TaskStatus) => setEditForm(prev => ({ ...prev, status: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="in_progress">In Progress</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="overdue">Overdue</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="dueDate">Due Date</Label>
-                            <Input
-                                id="dueDate"
-                                type="date"
-                                value={editForm.dueDate}
-                                onChange={(e) => setEditForm(prev => ({ ...prev, dueDate: e.target.value }))}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setEditingTask(null)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveEdit}>
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <EditTaskModal
+                isOpen={!!editingTask}
+                onClose={() => setEditingTask(null)}
+                task={editingTask}
+                orgId={Number(orgId)}
+                teamId={editingTask?.teamId || 0}
+                onTaskUpdated={() => {
+                    setEditingTask(null);
+                }}
+            />
+            <DeleteTaskDialog
+                open={!!deletingTask}
+                onClose={() => setDeletingTask(null)}
+                taskId={deletingTask?.id || 0}
+            />
         </>
     )
 }

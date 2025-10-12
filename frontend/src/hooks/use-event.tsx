@@ -102,7 +102,7 @@ const getEventById = async (id: number): Promise<Event> => {
     return response.data.data;
 };
 
-const getAllEventsByOrg = async (orgId: number): Promise<Event[]> => {
+export const getAllEventsByOrg = async (orgId: number): Promise<Event[]> => {
     const response = await axios.get(`http://localhost:5000/api/event/get-all/${orgId}`, {
         headers: getAuthHeaders()
     });

@@ -105,7 +105,7 @@ const joinOrganization = async (code: string) => {
   return response.data.data;
 };
 
-const getOrganizationMembers = async (orgId: number): Promise<User[]> => {
+export const getOrganizationMembers = async (orgId: number): Promise<User[]> => {
   const response = await axios.get(
     `http://localhost:5000/api/org/members/${orgId}`,
     {
@@ -287,7 +287,7 @@ export const useOrgMembers = (orgId: number) => {
   return useQuery({
     queryKey: ["org", "members", orgId],
     queryFn: () => getOrganizationMembers(orgId),
-    enabled: !!orgId,
+    // enabled: !!orgId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

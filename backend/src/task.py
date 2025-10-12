@@ -7,35 +7,58 @@ from models import Task, Team, TeamMember, TaskAssignee, TaskStatus, Priority
 
 task_bp = Blueprint("task", __name__)
 
+
 @task_bp.route("/create", methods=["POST"])
 @token_required
 def create_task(current_user):
-    event_id = request.json.get("eventId")
-    team_id = request.json.get("teamId")
-    org_id = request.json.get("orgId")
-    title = request.json.get("title")
-    description = request.json.get("description")
-    priority = request.json.get("priority", Priority.LOW)
-    status = request.json.get("status", TaskStatus.PENDING)
-    due_date_str = request.json.get("dueDate")
-    user_ids = request.json.get("userIds", [])
+    data = request.get_json() if request.is_json else request.json
+    event_id = data.get("eventId") or None
+    team_id = data.get("teamId")
+    org_id = data.get("orgId")
+    title = data.get("title")
+    description = data.get("description")
+    priority = data.get("priority", "low")
+    status = data.get("status", "pending")
+    due_date_str = data.get("dueDate")
+    user_ids = data.get("userIds", [])
 
-    if not all([event_id, team_id, org_id, title, priority, status, due_date_str]):
-        return jsonify({"message": "All fields are required"}), 400
+    if not all([team_id, org_id, title, priority, status, due_date_str]):
+        return jsonify({"message": "teamId, orgId, title, priority, status, and dueDate are required"}), 400
 
     try:
         due_date = datetime.fromisoformat(due_date_str)
-    except ValueError:
+    except Exception:
         return jsonify({"message": "Invalid dueDate format"}), 400
 
     team = Team.query.get(team_id)
     if not team:
         return jsonify({"message": "Team not found"}), 404
-    if current_user.id not in team.members.user.id:
+
+    # ✅ FIXED: Correct membership validation
+    member_ids = [member.user_id for member in team.members]
+    if current_user.id not in member_ids:
         return jsonify({"message": "You are not a member of this team"}), 403
 
-    creator_id = current_user.id
+    # Convert status/priority (string to Enum)
+    try:
+        priority_enum = Priority(priority.upper()) if hasattr(
+            priority, "upper") else Priority(priority)
+    except ValueError:
+        try:
+            priority_enum = Priority(priority.lower())
+        except Exception:
+            priority_enum = Priority.LOW
 
+    try:
+        status_enum = TaskStatus(
+            status.upper() if hasattr(status, "upper") else status)
+    except ValueError:
+        try:
+            status_enum = TaskStatus(status.lower())
+        except Exception:
+            status_enum = TaskStatus.PENDING
+
+    creator_id = current_user.id
     new_task = Task(
         event_id=event_id,
         team_id=team_id,
@@ -43,27 +66,26 @@ def create_task(current_user):
         creator_id=creator_id,
         title=title,
         description=description,
-        priority=priority,
-        status=status,
+        priority=priority_enum,
+        status=status_enum,
         due_date=due_date,
     )
     db.session.add(new_task)
     db.session.flush()
 
     task_id = new_task.id
-    if not task_id or not user_ids:
-        return jsonify({"message": "taskId and userIds are required"}), 400
 
-    if not task_id or not user_ids:
-        return jsonify({"message": "taskId and userIds are required"}), 400
-
+    # Assignment is optional
     assigned = []
-    for uid in user_ids:
-        if not TeamMember.query.filter_by(team_id=team.id, user_id=uid).first():
-            continue
-        if not TaskAssignee.query.filter_by(task_id=new_task.id, user_id=uid).first():
-            db.session.add(TaskAssignee(task_id=new_task.id, user_id=uid))
-            assigned.append(uid)
+    if user_ids:
+        for uid in user_ids:
+            # Check if user is a team member
+            if not TeamMember.query.filter_by(team_id=team.id, user_id=uid).first():
+                continue
+            # Check if already assigned
+            if not TaskAssignee.query.filter_by(task_id=task_id, user_id=uid).first():
+                db.session.add(TaskAssignee(task_id=task_id, user_id=uid))
+                assigned.append(uid)
 
     try:
         db.session.commit()
@@ -72,9 +94,14 @@ def create_task(current_user):
         return jsonify({"message": "Database integrity error"}), 500
     except Exception as e:
         db.session.rollback()
-        return jsonify(({"message": str(e)}), 400)
+        return jsonify({"message": str(e)}), 400
 
-    return jsonify({"message": "Users assigned", "Assigned User Ids": assigned}), 201
+    return jsonify({
+        "message": "Task created successfully",
+        "task": new_task.to_json(),
+        "assignedUserIds": assigned,
+    }), 201
+
 
 @task_bp.route("/event/<int:event_id>", methods=["GET"])
 @token_required
@@ -82,15 +109,17 @@ def get_tasks_by_event_id(current_user, event_id):
     tasks = Task.query.filter_by(event_id=event_id).all()
     return jsonify({"data": [t.to_json() for t in tasks]}), 200
 
+
 @task_bp.route("/team/<int:team_id>", methods=["GET"])
 @token_required
 def get_tasks_by_team_id(current_user, team_id):
     tasks = Task.query.filter_by(team_id=team_id).all()
     return jsonify({"data": [t.to_json() for t in tasks]}), 200
 
+
 @task_bp.route("/update/<int:task_id>", methods=["PATCH"])
 @token_required
-def update_task(task_id, current_user):
+def update_task(current_user, task_id):
     task = Task.query.get(task_id)
     if not task:
         return jsonify({"message": "Task not found"}), 404
@@ -99,23 +128,56 @@ def update_task(task_id, current_user):
         return jsonify({"message": "Not authorized"}), 403
 
     data = request.get_json()
-    if "title" in data: task.title = data["title"]
-    if "description" in data: task.description = data["description"]
-    if "priority" in data: task.priority = data["priority"]
-    if "status" in data: task.status = data["status"]
+
+    if "title" in data:
+        task.title = data["title"]
+
+    if "description" in data:
+        task.description = data["description"]
+
+    priority_value = data.get("priority")
+    if priority_value:
+        try:
+            priority_enum = Priority(priority_value.lower())
+            task.priority = priority_enum
+        except ValueError:
+            priority_enum = Priority.LOW
+    else:
+        priority_enum = Priority.LOW
+
+    status_value = data.get("status")
+    if status_value:
+        try:
+            status_enum = TaskStatus(status_value.lower())
+            task.status = status_enum
+        except ValueError:
+            status_enum = TaskStatus.PENDING
+    else:
+        status_enum = TaskStatus.PENDING
+
+    # Handle both 'due_date' and 'dueDate' keys
     if "due_date" in data:
         try:
-            task.due_date = datetime.fromisoformat(data["dueDate"])
-        except ValueError:
+            task.due_date = datetime.fromisoformat(data["due_date"])
+        except (ValueError, TypeError):
             return jsonify({"message": "Invalid due_date format"}), 400
+    elif "dueDate" in data:
+        try:
+            task.due_date = datetime.fromisoformat(data["dueDate"])
+        except (ValueError, TypeError):
+            return jsonify({"message": "Invalid dueDate format"}), 400
 
-    db.session.commit()
+    try:
+        db.session.commit()
+        return jsonify({"message": "Task updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error updating task: {str(e)}"}), 500
 
-    return jsonify({"message": "Task updated"}), 200
 
 @task_bp.route("/delete/<int:task_id>", methods=["DELETE"])
 @token_required
-def delete_task(task_id, current_user):
+def delete_task(current_user, task_id):
     task = Task.query.get(task_id)
     if not task:
         return jsonify({"message": "Task not found"}), 404
@@ -127,6 +189,7 @@ def delete_task(task_id, current_user):
     db.session.commit()
 
     return jsonify({"message": "Task deleted"}), 200
+
 
 @task_bp.route("/assign", methods=["POST"])
 @token_required
@@ -166,6 +229,7 @@ def assign_task(current_user):
 
     return jsonify({"message": "Users assigned", "assigned_user_ids": assigned}), 200
 
+
 @task_bp.route("/unassign", methods=["DELETE"])
 @token_required
 def unassign_task():
@@ -182,7 +246,8 @@ def unassign_task():
 
     removed = []
     for uid in user_ids:
-        record = TaskAssignee.query.filter_by(task_id=task_id, user_id=uid).first()
+        record = TaskAssignee.query.filter_by(
+            task_id=task_id, user_id=uid).first()
         if record:
             db.session.delete(record)
             removed.append(uid)

@@ -11,6 +11,7 @@ import { BudgetOverview } from "./budget-overview";
 
 import { useOrgStore } from "@/hooks/use-org-store";
 import { useIsAuthenticated } from "@/hooks/use-auth";
+import { useOrgDashboard } from "@/hooks/use-dashboard";
 import { useRequireOrganization } from "@/utils/org-client-guard";
 
 export const Dashboard = () => {
@@ -19,6 +20,7 @@ export const Dashboard = () => {
 
     const { activeOrg } = useOrgStore();
     const { isAuthenticated } = useIsAuthenticated();
+    const { data } = useOrgDashboard(activeOrg?.id || 0);
     const { hasOrganizations, isLoading: orgLoading } = useRequireOrganization();
 
     useEffect(() => {
@@ -49,17 +51,24 @@ export const Dashboard = () => {
         <div>
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-[#344E41] mb-2">Welcome back {activeOrg?.name} to Eventora</h1>
-                <p className="text-[#3A5A40]">Here&apos;s what&apos;s happening with your organization today.</p>
+                <p className="text-[#3A5A40]">Here&apos;s what&apos;s happening with your club today.</p>
             </div>
 
-            <StatsGrid />
+            <StatsGrid
+                totalEvents={data?.totalEvents || 0}
+                totalMembers={data?.totalMembers || 0}
+                totalTeams={data?.totalTeams || 0}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-1">
                     <QuickActions />
                 </div>
                 <div className="lg:col-span-2">
-                    <UpcomingEvents />
+                    <UpcomingEvents
+                        orgId={activeOrg?.id || 0}
+                        events={data?.recentEvents || []}
+                    />
                 </div>
             </div>
 
