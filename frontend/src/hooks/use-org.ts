@@ -1,3 +1,6 @@
+'use client';
+
+
 import axios from "axios";
 import { Org, User } from "@/type";
 import { toast } from "sonner";

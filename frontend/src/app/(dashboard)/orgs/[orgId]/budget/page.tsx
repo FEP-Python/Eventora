@@ -1,7 +1,7 @@
-import { Budget } from "@/components/dashboard/budget/budget";
+import { BudgetComponent } from "@/components/dashboard/budget/budget";
 
 const BudgetPage = () => {
-    return <Budget />;
+    return <BudgetComponent />;
 }
 
 export default BudgetPage;

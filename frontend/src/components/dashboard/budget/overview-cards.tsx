@@ -44,7 +44,7 @@ export const BudgetOverviewCards = ({ overviewData, categories }: BudgetOverview
                         <div>
                             <p className="text-sm font-medium text-gray-600 mb-1">Total Spent</p>
                             <p className="text-2xl font-bold text-red-600">₹{overviewData.totalSpent.toLocaleString()}</p>
-                            <p className="text-xs text-gray-500">{overviewData.percentageUsed}% used</p>
+                            <p className="text-xs text-gray-500">{overviewData.percentageUsed.toLocaleString() + "% used"}</p>
                         </div>
                         <div className="p-3 rounded-full bg-red-100 text-red-600">
                             <TrendingUp className="h-6 w-6" />
@@ -61,7 +61,7 @@ export const BudgetOverviewCards = ({ overviewData, categories }: BudgetOverview
                             <p className="text-2xl font-bold text-green-600">
                                 ₹{overviewData.totalRemaining.toLocaleString()}
                             </p>
-                            <p className="text-xs text-gray-500">{100 - overviewData.percentageUsed}% left</p>
+                            <p className="text-xs text-gray-500">{(100 - overviewData.percentageUsed).toLocaleString() + "% left"}</p>
                         </div>
                         <div className="p-3 rounded-full bg-green-100 text-green-600">
                             <TrendingDown className="h-6 w-6" />
@@ -78,7 +78,7 @@ export const BudgetOverviewCards = ({ overviewData, categories }: BudgetOverview
                             <p className="text-2xl font-bold text-gray-900">
                                 {categories.reduce((sum, cat) => sum + cat.transactions, 0)}
                             </p>
-                            <p className="text-xs text-gray-500">This month</p>
+                            <p className="text-xs text-gray-500">This {new Date().toLocaleString('default', { month: 'long' })}</p>
                         </div>
                         <div className="p-3 rounded-full bg-purple-100 text-purple-600">
                             <Receipt className="h-6 w-6" />

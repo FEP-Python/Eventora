@@ -82,3 +82,43 @@ export type Task = {
     team?: Team;
     organization?: Org;
 }
+
+export type Budget = {
+    id: number;
+    orgId: number;
+    name: string;
+    description?: string;
+    totalAmount: number;
+    spentAmount: number;
+    remainingAmount: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export type BudgetAnalytics = {
+    totalBudgets: number;
+    totalBudgetAmount: number;
+    totalSpentAmount: number;
+    totalRemainingAmount: number;
+    utilizationPercentage: number;
+    budgets: Budget[];
+}
+
+export type CreateBudgetRequest = {
+    orgId: number;
+    name: string;
+    description?: string;
+    totalAmount: number;
+    spentAmount?: number;
+}
+
+export type UpdateBudgetRequest = {
+    name?: string;
+    description?: string;
+    totalAmount?: number;
+    spentAmount?: number;
+}
+
+export type ExpenseRequest = {
+    amount: number;
+}

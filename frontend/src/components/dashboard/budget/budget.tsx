@@ -1,78 +1,62 @@
+'use client';
+
+import { useState } from "react";
 import { Download, Plus } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-
-import { BudgetTabs } from "./budget-tabs";
 import { BudgetProgress } from "./budget-progress";
 import { BudgetOverviewCards } from "./overview-cards";
+import { CreateBudgetModal } from "./create-budget-modal";
+import { BudgetGrid } from "./budget-grid";
+import { useOrgId } from "@/hooks/use-org-id";
+import { useGetBudgetAnalytics, useGetAllBudgets } from "@/hooks/use-budget";
+import type { Budget } from "@/type";
 
+export const BudgetComponent = () => {
+    const orgId = useOrgId();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useGetBudgetAnalytics(orgId);
+    const { data: budgets, isLoading: budgetsLoading, error: budgetsError } = useGetAllBudgets(orgId);
 
-export const Budget = () => {
-    const overviewData = {
-        totalBudget: 100000,
-        totalSpent: 60000,
-        totalRemaining: 40000,
-        percentageUsed: 60,
-    }
+    // Transform analytics data for the overview
+    const overviewData = analytics ? {
+        totalBudget: analytics.totalBudgetAmount,
+        totalSpent: analytics.totalSpentAmount,
+        totalRemaining: analytics.totalRemainingAmount,
+        percentageUsed: analytics.utilizationPercentage,
+    } : {
+        totalBudget: 0,
+        totalSpent: 0,
+        totalRemaining: 0,
+        percentageUsed: 0,
+    };
 
-    const categories = [
-        {
-            id: 1,
-            name: "Venue & Equipment",
-            allocated: 30000,
-            spent: 18000,
-            remaining: 12000,
-            percentage: 60,
-            status: "on-track",
-            transactions: 8,
-            lastUpdated: "2024-03-10",
-        },
-        {
-            id: 2,
-            name: "Marketing & Promotion",
-            allocated: 15000,
-            spent: 12000,
-            remaining: 3000,
-            percentage: 80,
-            status: "warning",
-            transactions: 12,
-            lastUpdated: "2024-03-09",
-        },
-        {
-            id: 3,
-            name: "Food & Catering",
-            allocated: 25000,
-            spent: 8000,
-            remaining: 17000,
-            percentage: 32,
-            status: "under-budget",
-            transactions: 5,
-            lastUpdated: "2024-03-08",
-        },
-        {
-            id: 4,
-            name: "Speakers & Guests",
-            allocated: 20000,
-            spent: 5000,
-            remaining: 15000,
-            percentage: 25,
-            status: "under-budget",
-            transactions: 3,
-            lastUpdated: "2024-03-07",
-        },
-        {
-            id: 5,
-            name: "Miscellaneous",
-            allocated: 10000,
-            spent: 2000,
-            remaining: 8000,
-            percentage: 20,
-            status: "under-budget",
-            transactions: 6,
-            lastUpdated: "2024-03-06",
-        },
-    ];
+    // Transform budgets data for categories
+    const categories = budgets?.map((budget: Budget) => {
+        const percentage = budget.totalAmount > 0 ? (budget.spentAmount / budget.totalAmount) * 100 : 0;
+        let status = "under-budget";
+        
+        if (percentage >= 90) {
+            status = "over-budget";
+        } else if (percentage >= 75) {
+            status = "warning";
+        } else if (percentage >= 50) {
+            status = "on-track";
+        }
 
+        return {
+            id: budget.id,
+            name: budget.name,
+            allocated: budget.totalAmount,
+            spent: budget.spentAmount,
+            remaining: budget.remainingAmount,
+            percentage: Math.round(percentage),
+            status,
+            transactions: 0, // This would need to be implemented with transaction tracking
+            lastUpdated: budget.updatedAt ? new Date(budget.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+    }) || [];
+
+    // Mock transactions data - this would need to be implemented with a transactions API
     const recentTransactions = [
         {
             id: 1,
@@ -126,6 +110,61 @@ export const Budget = () => {
         },
     ];
 
+    // Loading state
+    if (analyticsLoading || budgetsLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading budget data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (analyticsError || budgetsError) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">Failed to load budget data</p>
+                    <Button onClick={() => window.location.reload()}>
+                        Try Again
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Empty state
+    if (!budgets || budgets.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+                <div className="text-center flex flex-col items-center justify-center max-w-md">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <Plus className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Budgets Found</h3>
+                    <p className="text-gray-600 mb-6 text-center">
+                        Create your first budget category to start tracking expenses and managing your club's finances.
+                    </p>
+                    <Button 
+                        variant="green" 
+                        className="flex items-center"
+                        onClick={() => setIsCreateModalOpen(true)}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Create Your First Budget
+                    </Button>
+                </div>
+                <CreateBudgetModal 
+                    isOpen={isCreateModalOpen} 
+                    onClose={() => setIsCreateModalOpen(false)} 
+                />
+            </div>
+        );
+    }
+
     return (
         <div>
             <div className="flex items-center justify-between mb-8">
@@ -134,20 +173,37 @@ export const Budget = () => {
                     <p className="text-gray-600">Track expenses and manage your organization&apos;s finances</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <Button variant="outline" className="flex items-center">
-                        <Download className="h-4 w-4" />
-                        <span>Export</span>
-                    </Button>
-                    <Button variant="green" className="flex items-center">
+                    <Button 
+                        variant="green" 
+                        className="flex items-center"
+                        onClick={() => setIsCreateModalOpen(true)}
+                    >
                         <Plus className="h-4 w-4" />
-                        <span>Add Expense</span>
+                        <span>Create Budget</span>
                     </Button>
                 </div>
             </div>
 
             <BudgetOverviewCards overviewData={overviewData} categories={categories} />
             <BudgetProgress overviewData={overviewData} />
-            <BudgetTabs categories={categories} recentTransactions={recentTransactions} />
+            
+            {/* Budget Grid Section */}
+            <div className="my-8">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Budget Categories</h2>
+                        <p className="text-gray-600 mt-1">
+                            {budgets.length} {budgets.length === 1 ? 'budget' : 'budgets'} created
+                        </p>
+                    </div>
+                </div>
+                <BudgetGrid budgets={budgets} />
+            </div>
+            
+            <CreateBudgetModal 
+                isOpen={isCreateModalOpen} 
+                onClose={() => setIsCreateModalOpen(false)} 
+            />
         </div>
     )
 }

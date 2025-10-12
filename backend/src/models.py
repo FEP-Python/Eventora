@@ -277,4 +277,6 @@ class Budget(db.Model):
             "totalAmount": self.total_amount,
             "spentAmount": self.spent_amount,
             "remainingAmount": self.total_amount - self.spent_amount,
+            "createdAt": self.created_at.isoformat() if self.created_at else None,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
