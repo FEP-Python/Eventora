@@ -3,16 +3,21 @@
 import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { useCurrentUser, useIsAuthenticated, useLogout } from "@/hooks/use-auth";
+import { useUserContext } from "@/hooks/use-rbac";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { RoleBadge } from "@/components/rbac";
+import { useOrgId } from "@/hooks/use-org-id";
 
 
 export const SidebarUserProfile = () => {
     const logout = useLogout();
     const { data: user } = useCurrentUser();
     const { isAuthenticated } = useIsAuthenticated();
+    const orgId = useOrgId();
+    const userContext = useUserContext(Number(orgId));
 
     const { isMobile } = useSidebar();
 
@@ -39,6 +44,11 @@ export const SidebarUserProfile = () => {
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">{user.firstName} {user.lastName}</span>
                                     <span className="truncate text-xs">{user.email}</span>
+                                    {userContext?.organizationRole && (
+                                        <div className="mt-1">
+                                            <RoleBadge role={userContext.organizationRole} size="sm" />
+                                        </div>
+                                    )}
                                 </div>
                                 <ChevronsUpDown className="ml-auto size-4" />
                             </SidebarMenuButton>
@@ -60,6 +70,11 @@ export const SidebarUserProfile = () => {
                                     <div className="grid flex-1 text-left text-sm leading-tight">
                                         <span className="truncate font-medium">{user.firstName} {user.lastName}</span>
                                         <span className="truncate text-xs">{user.email}</span>
+                                        {userContext?.organizationRole && (
+                                            <div className="mt-1">
+                                                <RoleBadge role={userContext.organizationRole} size="sm" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </DropdownMenuLabel>

@@ -5,10 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useModalStore } from "@/hooks/use-modal-store";
 import { useOrgStore } from "@/hooks/use-org-store";
 import { toast } from "sonner";
+import { ConditionalRender } from "@/components/rbac";
+import { useEventPermissions, useTaskPermissions, useBudgetPermissions, useOrgPermissions } from "@/hooks/use-rbac";
 
 export const QuickActions = () => {
     const { activeOrg } = useOrgStore();
     const openModal = useModalStore(state => state.openModal);
+    
+    // Get permissions
+    const eventPermissions = useEventPermissions(activeOrg?.id);
+    const taskPermissions = useTaskPermissions(activeOrg?.id);
+    const budgetPermissions = useBudgetPermissions(activeOrg?.id);
+    const orgPermissions = useOrgPermissions(activeOrg?.id);
+    
     const actions = [
         {
             title: "Add Task",
@@ -16,6 +25,7 @@ export const QuickActions = () => {
             icon: CheckSquare,
             color: "bg-[#A3B18A]",
             href: `/orgs/${activeOrg?.id}/tasks`,
+            permission: 'task:create' as const,
         },
         {
             title: "Budget Entry",
@@ -23,6 +33,7 @@ export const QuickActions = () => {
             icon: DollarSign,
             color: "bg-[#588157]",
             href: `/orgs/${activeOrg?.id}/budget`,
+            permission: 'budget:create' as const,
         },
     ];
 
@@ -47,53 +58,64 @@ export const QuickActions = () => {
                 <CardDescription className="text-[#3A5A40]">Common tasks and shortcuts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-                <div onClick={() => openModal("createEvent")} className="block hover:bg-[#DAD7CD]/30 transition-colors">
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
-                    >
-                        <div className={`p-2 rounded-md mr-3 text-white bg-[#588157]`}>
-                            <Calendar className="h-4 w-4" />
-                        </div>
-                        <div className="text-left">
-                            <p className="font-medium text-[#344E41]">Create Event</p>
-                            <p className="text-xs text-[#3A5A40]">Plan a new event</p>
-                        </div>
-                    </Button>
-                </div>
-                <div onClick={copyJoinUrl} className="block hover:bg-[#DAD7CD]/30 transition-colors">
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
-                    >
-                        <div className={`p-2 rounded-md mr-3 text-white bg-[#588157]`}>
-                            <UserPlus className="h-4 w-4" />
-                        </div>
-                        <div className="text-left">
-                            <p className="font-medium text-[#344E41]">Invite Member</p>
-                            <p className="text-xs text-[#3A5A40]">Add member to club</p>
-                        </div>
-                    </Button>
-                </div>
-                {actions.map((action, index) => (
-                    <Link
-                        key={index}
-                        href={action.href}
-                        className="block hover:bg-[#DAD7CD]/30 transition-colors"
-                    >
+                <ConditionalRender permission="event:create" orgId={activeOrg?.id}>
+                    <div onClick={() => openModal("createEvent")} className="block hover:bg-[#DAD7CD]/30 transition-colors">
                         <Button
                             variant="outline"
                             className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
                         >
-                            <div className={`p-2 rounded-md mr-3 text-white ${action.color}`}>
-                                <action.icon className="h-4 w-4" />
+                            <div className={`p-2 rounded-md mr-3 text-white bg-[#588157]`}>
+                                <Calendar className="h-4 w-4" />
                             </div>
                             <div className="text-left">
-                                <p className="font-medium text-[#344E41]">{action.title}</p>
-                                <p className="text-xs text-[#3A5A40]">{action.description}</p>
+                                <p className="font-medium text-[#344E41]">Create Event</p>
+                                <p className="text-xs text-[#3A5A40]">Plan a new event</p>
                             </div>
                         </Button>
-                    </Link>
+                    </div>
+                </ConditionalRender>
+                
+                <ConditionalRender permission="user:invite" orgId={activeOrg?.id}>
+                    <div onClick={copyJoinUrl} className="block hover:bg-[#DAD7CD]/30 transition-colors">
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
+                        >
+                            <div className={`p-2 rounded-md mr-3 text-white bg-[#588157]`}>
+                                <UserPlus className="h-4 w-4" />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-medium text-[#344E41]">Invite Member</p>
+                                <p className="text-xs text-[#3A5A40]">Add member to club</p>
+                            </div>
+                        </Button>
+                    </div>
+                </ConditionalRender>
+                
+                {actions.map((action, index) => (
+                    <ConditionalRender
+                        key={index}
+                        permission={action.permission}
+                        orgId={activeOrg?.id}
+                    >
+                        <Link
+                            href={action.href}
+                            className="block hover:bg-[#DAD7CD]/30 transition-colors"
+                        >
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start h-auto p-3 border-[#A3B18A]/20 hover:bg-[#DAD7CD]/30 bg-transparent"
+                            >
+                                <div className={`p-2 rounded-md mr-3 text-white ${action.color}`}>
+                                    <action.icon className="h-4 w-4" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-medium text-[#344E41]">{action.title}</p>
+                                    <p className="text-xs text-[#3A5A40]">{action.description}</p>
+                                </div>
+                            </Button>
+                        </Link>
+                    </ConditionalRender>
                 ))}
             </CardContent>
         </Card>

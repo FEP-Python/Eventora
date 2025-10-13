@@ -12,15 +12,31 @@ export type Org = {
     updatedAt: Date,
 }
 
+export type UserRole = "leader" | "coleader" | "member" | "volunteer";
+
 export type User = {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
-    role: string;
+    role: UserRole;
     college: string;
     created_at: Date;
     updated_at: Date;
+}
+
+export type OrganizationMember = {
+    user_id: number;
+    org_id: number;
+    role: UserRole;
+    user: User;
+}
+
+export type TeamMember = {
+    user_id: number;
+    team_id: number;
+    role: UserRole;
+    user: User;
 }
 
 export type EventStatus = "draft" | "planned" | "ongoing" | "completed" | "cancelled";
@@ -122,3 +138,69 @@ export type UpdateBudgetRequest = {
 export type ExpenseRequest = {
     amount: number;
 }
+
+// Role-Based Access Control Types
+export type Permission = 
+    // Organization permissions
+    | "org:create"
+    | "org:read"
+    | "org:update"
+    | "org:delete"
+    | "org:manage_members"
+    | "org:manage_teams"
+    | "org:manage_budget"
+    | "org:manage_events"
+    | "org:manage_tasks"
+    | "org:view_analytics"
+    
+    // Event permissions
+    | "event:create"
+    | "event:read"
+    | "event:update"
+    | "event:delete"
+    | "event:manage_registrations"
+    | "event:publish"
+    
+    // Team permissions
+    | "team:create"
+    | "team:read"
+    | "team:update"
+    | "team:delete"
+    | "team:manage_members"
+    | "team:assign_tasks"
+    
+    // Task permissions
+    | "task:create"
+    | "task:read"
+    | "task:update"
+    | "task:delete"
+    | "task:assign"
+    | "task:complete"
+    
+    // Budget permissions
+    | "budget:create"
+    | "budget:read"
+    | "budget:update"
+    | "budget:delete"
+    | "budget:manage_expenses"
+    | "budget:view_analytics"
+    
+    // User permissions
+    | "user:invite"
+    | "user:remove"
+    | "user:change_role"
+    | "user:view_profile"
+    | "user:update_profile";
+
+export type RolePermissions = {
+    [key in UserRole]: Permission[];
+};
+
+export type UserContext = {
+    user: User;
+    organizationRole?: UserRole;
+    teamRole?: UserRole;
+    permissions: Permission[];
+};
+
+export type AccessLevel = "none" | "read" | "write" | "admin";
