@@ -41,7 +41,7 @@ export default function JoinClubPage() {
                     router.push(`/orgs/${result.id}`);
                 }, 2000);
             },
-            onError: (err: any) => {
+            onError: (err) => {
                 console.log("Error details:", err); // This will help debug
 
                 // Extract the actual error message from the response

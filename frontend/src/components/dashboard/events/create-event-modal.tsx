@@ -10,6 +10,8 @@ import { useOrgStore } from "@/hooks/use-org-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useModalStore } from "@/hooks/use-modal-store";
 import { useOrgEventManagement } from "@/hooks/use-event";
+import { useEventPermissions } from "@/hooks/use-rbac";
+import { ConditionalRender } from "@/components/rbac";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,7 @@ export const CreateEventModal = () => {
     const { activeOrg } = useOrgStore();
     const { isOpen, closeModal, type } = useModalStore();
     const { createEvent, isCreating } = useOrgEventManagement(activeOrg?.id || 1);
+    const eventPermissions = useEventPermissions(activeOrg?.id);
 
     const isEventModalOpen = isOpen && type === "createEvent";
 
@@ -106,11 +109,12 @@ export const CreateEventModal = () => {
     };
 
     return (
-        <ResponsiveModal
-            title="Create Event"
-            open={isEventModalOpen}
-            onOpenChange={closeModal}
-        >
+        <ConditionalRender permission="event:create" orgId={activeOrg?.id}>
+            <ResponsiveModal
+                title="Create Event"
+                open={isEventModalOpen}
+                onOpenChange={closeModal}
+            >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,5 +445,6 @@ export const CreateEventModal = () => {
                 </form>
             </Form>
         </ResponsiveModal>
+        </ConditionalRender>
     );
 }
