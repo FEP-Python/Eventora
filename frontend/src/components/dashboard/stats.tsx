@@ -6,9 +6,10 @@ interface StatsGridProps {
     totalEvents: number;
     totalMembers: number;
     totalTeams: number;
+    totalBudget: string;
 }
 
-export const StatsGrid = ({ totalEvents, totalMembers, totalTeams }: StatsGridProps) => {
+export const StatsGrid = ({ totalEvents, totalMembers, totalTeams, totalBudget }: StatsGridProps) => {
     const stats = [
         {
             title: "Events",
@@ -36,7 +37,7 @@ export const StatsGrid = ({ totalEvents, totalMembers, totalTeams }: StatsGridPr
         },
         {
             title: "Budget",
-            value: "₹45,000",
+            value: totalBudget,
             change: "Total budget of club",
             icon: DollarSign,
             color: "text-[#588157]",

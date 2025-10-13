@@ -65,6 +65,7 @@ export const Dashboard = () => {
                 totalEvents={data?.totalEvents || 0}
                 totalMembers={data?.totalMembers || 0}
                 totalTeams={data?.totalTeams || 0}
+                totalBudget={`₹${(analytics?.totalBudgetAmount ?? 0).toLocaleString()}`}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
