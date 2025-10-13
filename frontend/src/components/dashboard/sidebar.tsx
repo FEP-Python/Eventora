@@ -8,9 +8,13 @@ import { OrgSwitcher } from "./organization/org-switcher";
 
 import { useUserAllOrgs } from "@/hooks/use-users-org";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { useOrgDashboard } from "@/hooks/use-dashboard";
+import { useOrgId } from "@/hooks/use-org-id";
 
 
 export const DashboardSidebar = () => {
+    const orgId = useOrgId();
+    const { data: dashboardData } = useOrgDashboard(Number(orgId));
     const { data: orgs = [] } = useUserAllOrgs();
 
     return (
@@ -27,7 +31,10 @@ export const DashboardSidebar = () => {
                 <OrgSwitcher orgs={orgs} />
             </SidebarHeader>
             <SidebarContent>
-                <Navigation />
+                <Navigation 
+                    events={dashboardData?.totalEvents || 0}
+                    teams={dashboardData?.totalTeams || 0}
+                />
             </SidebarContent>
             <SidebarFooter>
                 <SidebarUserProfile />

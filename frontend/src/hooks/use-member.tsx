@@ -3,6 +3,7 @@
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { backend_api_url } from "@/constants";
 
 interface InviteMemberRequest {
     email: string;
@@ -26,7 +27,7 @@ const getAuthHeaders = () => {
 
 // API Function
 const inviteMember = async (memberData: InviteMemberRequest) => {
-    const response = await axios.post("http://localhost:5000/api/org/invite-member", memberData, {
+    const response = await axios.post(`${backend_api_url}/org/invite-member`, memberData, {
         headers: getAuthHeaders()
     });
 

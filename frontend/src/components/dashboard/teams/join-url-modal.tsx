@@ -8,6 +8,7 @@ import { Copy, Check } from "lucide-react";
 import { useModalStore } from "@/hooks/use-modal-store";
 import { useOrgStore } from "@/hooks/use-org-store";
 import { toast } from "sonner";
+import { frontend_url } from "@/constants";
 
 export const JoinUrlModal = () => {
     const { isOpen, closeModal, type } = useModalStore();
@@ -18,7 +19,7 @@ export const JoinUrlModal = () => {
 
     if (!activeOrg) return null;
 
-    const joinUrl = `${typeof window !== 'undefined' ? window.location.origin : 'localhost:3000'}/join-club?code=${activeOrg.code}`;
+    const joinUrl = `${frontend_url}/join-club?code=${activeOrg.code}`;
 
     const copyToClipboard = async () => {
         try {

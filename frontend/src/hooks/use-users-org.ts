@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Org } from '@/type';
 import { useQuery } from '@tanstack/react-query';
+import { backend_api_url } from '@/constants';
 
 interface ApiResponse<T> {
   data: T[];
@@ -12,7 +13,7 @@ export const getUserOwnedOrgs = async (): Promise<Org[]> => {
   if (!token) throw new Error('No authentication token found');
 
   const response = await axios.get<ApiResponse<Org>>(
-    'http://localhost:5000/api/user/owned-org',
+    `${backend_api_url}/user/owned-org`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -27,7 +28,7 @@ export const getUserMemberOrgs = async (): Promise<Org[]> => {
   if (!token) throw new Error('No authentication token found');
 
   const response = await axios.get<ApiResponse<Org>>(
-    'http://localhost:5000/api/user/member-org',
+    `${backend_api_url}/user/member-org`,
     {
       headers: {
         Authorization: `Bearer ${token}`,

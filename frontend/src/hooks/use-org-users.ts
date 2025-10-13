@@ -3,6 +3,7 @@
 import axios from 'axios';
 import { User } from '@/type';
 import { useQuery } from '@tanstack/react-query';
+import { backend_api_url } from '@/constants';
 
 interface ApiResponse<T> {
   data: T[];
@@ -14,7 +15,7 @@ export const getOrgUsers = async (orgId: number): Promise<User[]> => {
   if (!token) throw new Error('No authentication token found');
 
   const response = await axios.get<ApiResponse<User>>(
-    `http://localhost:5000/api/org/users/${orgId}`,
+    `${backend_api_url}/org/users/${orgId}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,

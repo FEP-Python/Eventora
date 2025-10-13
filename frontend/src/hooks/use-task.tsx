@@ -4,6 +4,7 @@ import { Task, TaskPriority, TaskStatus } from "@/type";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { backend_api_url } from "@/constants";
 
 interface CreateTaskRequest {
     eventId: number;
@@ -54,7 +55,7 @@ const getAuthHeaders = () => {
 
 // API Functions
 const createTask = async (taskData: CreateTaskRequest) => {
-    const response = await axios.post("http://localhost:5000/api/task/create", taskData, {
+    const response = await axios.post(`${backend_api_url}/task/create`, taskData, {
         headers: getAuthHeaders()
     });
 
@@ -67,7 +68,7 @@ const createTask = async (taskData: CreateTaskRequest) => {
 };
 
 const updateTask = async ({ id, ...updateData }: UpdateTaskRequest & { id: number }) => {
-    const response = await axios.patch(`http://localhost:5000/api/task/update/${id}`, updateData, {
+    const response = await axios.patch(`${backend_api_url}/task/update/${id}`, updateData, {
         headers: getAuthHeaders()
     });
 
@@ -77,7 +78,7 @@ const updateTask = async ({ id, ...updateData }: UpdateTaskRequest & { id: numbe
 };
 
 const deleteTask = async (id: number) => {
-    const response = await axios.delete<ApiResponse>(`http://localhost:5000/api/task/delete/${id}`, {
+    const response = await axios.delete<ApiResponse>(`${backend_api_url}/task/delete/${id}`, {
         headers: getAuthHeaders(),
     });
 
@@ -85,21 +86,21 @@ const deleteTask = async (id: number) => {
 };
 
 const getTasksByEvent = async (eventId: number): Promise<Task[]> => {
-    const response = await axios.get(`http://localhost:5000/api/task/event/${eventId}`, {
+    const response = await axios.get(`${backend_api_url}/task/event/${eventId}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 const getTasksByTeam = async (teamId: number): Promise<Task[]> => {
-    const response = await axios.get(`http://localhost:5000/api/task/team/${teamId}`, {
+    const response = await axios.get(`${backend_api_url}/task/team/${teamId}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 const assignTask = async (assignData: AssignTaskRequest) => {
-    const response = await axios.post(`http://localhost:5000/api/task/assign`, assignData, {
+    const response = await axios.post(`${backend_api_url}/task/assign`, assignData, {
         headers: getAuthHeaders()
     });
     return {
@@ -109,7 +110,7 @@ const assignTask = async (assignData: AssignTaskRequest) => {
 };
 
 const unassignTask = async (unassignData: UnassignTaskRequest) => {
-    const response = await axios.delete(`http://localhost:5000/api/task/unassign`, {
+    const response = await axios.delete(`${backend_api_url}/task/unassign`, {
         headers: getAuthHeaders(),
         data: unassignData
     });

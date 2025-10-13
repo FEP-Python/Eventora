@@ -1,10 +1,11 @@
 "use client";
 
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
+import axios, { AxiosError } from "axios";
 import { Event, EventStatus } from "@/type";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { backend_api_url } from "@/constants";
 
 interface CreateEventRequest {
     orgId: number;
@@ -64,7 +65,7 @@ const getAuthHeaders = () => {
 
 // API Functions
 const createEvent = async (eventData: CreateEventRequest) => {
-    const response = await axios.post("http://localhost:5000/api/event/create", eventData, {
+    const response = await axios.post(`${backend_api_url}/event/create`, eventData, {
         headers: getAuthHeaders()
     });
 
@@ -77,7 +78,7 @@ const createEvent = async (eventData: CreateEventRequest) => {
 };
 
 const updateEvent = async ({ id, ...updateData }: UpdateEventRequest & { id: number }) => {
-    const response = await axios.patch(`http://localhost:5000/api/event/update/${id}`, updateData, {
+    const response = await axios.patch(`${backend_api_url}/event/update/${id}`, updateData, {
         headers: getAuthHeaders()
     });
 
@@ -88,7 +89,7 @@ const updateEvent = async ({ id, ...updateData }: UpdateEventRequest & { id: num
 };
 
 const deleteEvent = async (id: number) => {
-    const response = await axios.delete<ApiResponse>(`http://localhost:5000/api/event/delete/${id}`, {
+    const response = await axios.delete<ApiResponse>(`${backend_api_url}/event/delete/${id}`, {
         headers: getAuthHeaders(),
     });
 
@@ -96,14 +97,14 @@ const deleteEvent = async (id: number) => {
 };
 
 const getEventById = async (id: number): Promise<Event> => {
-    const response = await axios.get(`http://localhost:5000/api/event/get/${id}`, {
+    const response = await axios.get(`${backend_api_url}/event/get/${id}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 export const getAllEventsByOrg = async (orgId: number): Promise<Event[]> => {
-    const response = await axios.get(`http://localhost:5000/api/event/get-all/${orgId}`, {
+    const response = await axios.get(`${backend_api_url}/event/get-all/${orgId}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
@@ -115,14 +116,14 @@ const searchEvents = async (params: SearchEventsParams): Promise<Event[]> => {
     if (params.type) searchParams.append('type', params.type);
     if (params.status) searchParams.append('status', params.status);
 
-    const response = await axios.get(`http://localhost:5000/api/event/search?${searchParams.toString()}`, {
+    const response = await axios.get(`${backend_api_url}/event/search?${searchParams.toString()}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 const getUpcomingEvents = async (orgId: number): Promise<Event[]> => {
-    const response = await axios.get(`http://localhost:5000/api/event/upcoming/${orgId}`);
+    const response = await axios.get(`${backend_api_url}/event/upcoming/${orgId}`);
     return response.data.data;
 };
 

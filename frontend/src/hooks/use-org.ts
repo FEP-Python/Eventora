@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrgStore } from "./use-org-store";
+import { backend_api_url } from "@/constants";
 
 interface CreateOrgRequest {
   name: string;
@@ -41,7 +42,7 @@ const getAuthHeaders = () => {
 
 const createOrganization = async (orgData: CreateOrgRequest) => {
   const response = await axios.post(
-    "http://localhost:5000/api/org/create",
+    `${backend_api_url}/org/create`,
     orgData,
     {
       headers: getAuthHeaders(),
@@ -62,7 +63,7 @@ const updateOrganization = async ({
   ...updateData
 }: UpdateOrgRequest & { id: number }) => {
   const res = await axios.patch(
-    `http://localhost:5000/api/org/update/${id}`,
+    `${backend_api_url}/org/update/${id}`,
     updateData,
     {
       headers: getAuthHeaders(),
@@ -76,7 +77,7 @@ const updateOrganization = async ({
 
 const deleteOrganization = async (id: number) => {
   const res = await axios.delete<ApiResponse>(
-    `http://localhost:5000/api/org/delete/${id}`,
+    `${backend_api_url}/org/delete/${id}`,
     {
       headers: getAuthHeaders(),
     }
@@ -86,14 +87,14 @@ const deleteOrganization = async (id: number) => {
 };
 
 const getOrganizationById = async (id: number): Promise<Org> => {
-  const response = await axios.get(`http://localhost:5000/api/org/get/${id}`, {
+  const response = await axios.get(`${backend_api_url}/org/get/${id}`, {
     headers: getAuthHeaders(),
   });
   return response.data.data;
 };
 
 const getAllOrganizations = async (): Promise<Org[]> => {
-  const res = await axios.get("http://localhost:5000/api/org/get-all", {
+  const res = await axios.get(`${backend_api_url}/org/get-all`, {
     headers: getAuthHeaders(),
   });
   return res.data.data;
@@ -101,7 +102,7 @@ const getAllOrganizations = async (): Promise<Org[]> => {
 
 const joinOrganization = async (code: string) => {
   const response = await axios.post(
-    "http://localhost:5000/api/org/join",
+    `${backend_api_url}/org/join`,
     { code },
     { headers: getAuthHeaders() }
   );
@@ -110,7 +111,7 @@ const joinOrganization = async (code: string) => {
 
 export const getOrganizationMembers = async (orgId: number): Promise<User[]> => {
   const response = await axios.get(
-    `http://localhost:5000/api/org/members/${orgId}`,
+    `${backend_api_url}/org/members/${orgId}`,
     {
       headers: getAuthHeaders(),
     }

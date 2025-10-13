@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useHasOrganizations } from '@/hooks/use-users-org';
+import { backend_api_url } from '@/constants';
 
 // Hook for protecting pages that require organizations
 export function useRequireOrganization(redirectTo: string = '/create-org') {
@@ -53,10 +54,10 @@ export function useCheckOrganizationAccess(requiredOrgId?: number) {
         }
 
         const [ownedResponse, memberResponse] = await Promise.all([
-          fetch('http://localhost:5000/api/user/owned-org', {
+          fetch(`${backend_api_url}/user/owned-org`, {
             headers: { 'Authorization': `Bearer ${token}` },
           }),
-          fetch('http://localhost:5000/api/user/member-org', {
+          fetch(`${backend_api_url}/user/member-org`, {
             headers: { 'Authorization': `Bearer ${token}` },
           }),
         ]);

@@ -9,10 +9,8 @@ import {
     ExpenseRequest 
 } from "@/type";
 import { useAuthToken } from "./use-auth";
+import { backend_api_url } from "@/constants";
 
-const API_BASE_URL = "http://localhost:5000/api/budget";
-
-// Helper function to get auth headers
 const getAuthHeaders = (token: string | null) => {
     return {
         headers: {
@@ -24,7 +22,7 @@ const getAuthHeaders = (token: string | null) => {
 // API functions
 const createBudget = async (budgetData: CreateBudgetRequest, token: string | null) => {
     const response = await axios.post(
-        `${API_BASE_URL}/create`,
+        `${backend_api_url}/budget/create`,
         budgetData,
         getAuthHeaders(token)
     );
@@ -33,7 +31,7 @@ const createBudget = async (budgetData: CreateBudgetRequest, token: string | nul
 
 const getAllBudgets = async (orgId: string, token: string | null) => {
     const response = await axios.get(
-        `${API_BASE_URL}/get-all/${orgId}`,
+        `${backend_api_url}/budget/get-all/${orgId}`,
         getAuthHeaders(token)
     );
     return response.data;
@@ -41,7 +39,7 @@ const getAllBudgets = async (orgId: string, token: string | null) => {
 
 const getBudgetById = async (budgetId: string, token: string | null) => {
     const response = await axios.get(
-        `${API_BASE_URL}/get/${budgetId}`,
+        `${backend_api_url}/budget/get/${budgetId}`,
         getAuthHeaders(token)
     );
     return response.data;
@@ -53,7 +51,7 @@ const updateBudget = async (
     token: string | null
 ) => {
     const response = await axios.patch(
-        `${API_BASE_URL}/update/${budgetId}`,
+        `${backend_api_url}/budget/update/${budgetId}`,
         budgetData,
         getAuthHeaders(token)
     );
@@ -62,7 +60,7 @@ const updateBudget = async (
 
 const deleteBudget = async (budgetId: string, token: string | null) => {
     const response = await axios.delete(
-        `${API_BASE_URL}/delete/${budgetId}`,
+        `${backend_api_url}/budget/delete/${budgetId}`,
         getAuthHeaders(token)
     );
     return response.data;
@@ -74,7 +72,7 @@ const addExpense = async (
     token: string | null
 ) => {
     const response = await axios.post(
-        `${API_BASE_URL}/add-expense/${budgetId}`,
+        `${backend_api_url}/budget/add-expense/${budgetId}`,
         expenseData,
         getAuthHeaders(token)
     );
@@ -87,7 +85,7 @@ const removeExpense = async (
     token: string | null
 ) => {
     const response = await axios.post(
-        `${API_BASE_URL}/remove-expense/${budgetId}`,
+        `${backend_api_url}/budget/remove-expense/${budgetId}`,
         expenseData,
         getAuthHeaders(token)
     );
@@ -96,7 +94,7 @@ const removeExpense = async (
 
 const getBudgetAnalytics = async (orgId: string, token: string | null) => {
     const response = await axios.get(
-        `${API_BASE_URL}/analytics/${orgId}`,
+        `${backend_api_url}/budget/analytics/${orgId}`,
         getAuthHeaders(token)
     );
     return response.data;

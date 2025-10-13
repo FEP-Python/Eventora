@@ -1,3 +1,5 @@
+import { backend_api_url } from "@/constants";
+
 export const clientOrgUtils = {
     // Check if user has any organizations (client-side only)
     async hasOrganizations(): Promise<boolean> {
@@ -8,13 +10,13 @@ export const clientOrgUtils = {
 
       try {
         const [ownedResponse, memberResponse] = await Promise.all([
-          fetch('http://localhost:5000/api/user/owned-org', {
+          fetch(`${backend_api_url}/user/owned-org`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }),
-          fetch('http://localhost:5000/api/user/member-org', {
+          fetch(`${backend_api_url}/user/member-org`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -48,13 +50,13 @@ export const clientOrgUtils = {
 
       try {
         const [ownedResponse, memberResponse] = await Promise.all([
-          fetch('http://localhost:5000/api/user/owned-org', {
+          fetch('${backend_api_url}/user/owned-org', {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           }),
-          fetch('http://localhost:5000/api/user/member-org', {
+          fetch('${backend_api_url}/user/member-org', {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',

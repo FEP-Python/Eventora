@@ -10,8 +10,13 @@ import { Button } from "@/components/ui/button";
 import { useOrgStore } from "@/hooks/use-org-store";
 import { useOrgEvents } from "@/hooks/use-event";
 
+interface NavigationProps {
+    events: number;
+    teams: number;
+}
 
-export const Navigation = () => {
+
+export const Navigation = ({ events, teams }: NavigationProps) => {
     const pathname = usePathname();
     const { activeOrg } = useOrgStore();
     const { data } = useOrgEvents(activeOrg?.id || 1);
@@ -34,20 +39,20 @@ export const Navigation = () => {
             name: "Events",
             href: `/orgs/${activeOrg?.id}/events`,
             icon: Calendar,
-            badge: noOfEvents,
+            badge: !events ? null : events,
             isSelected: isActive(`/orgs/${activeOrg?.id}/events`)
         },
         {
             name: "Teams",
             href: `/orgs/${activeOrg?.id}/teams`,
             icon: Users,
+            badge: !teams ? null : teams,
             isSelected: isActive(`/orgs/${activeOrg?.id}/teams`)
         },
         {
             name: "Tasks",
             href: `/orgs/${activeOrg?.id}/tasks`,
             icon: CheckSquare,
-            badge: noOfTasks,
             isSelected: isActive(`/orgs/${activeOrg?.id}/tasks`)
         },
         {

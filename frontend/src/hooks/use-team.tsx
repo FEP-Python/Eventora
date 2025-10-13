@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { backend_api_url } from "@/constants";
 
 interface CreateTeamRequest {
     orgId: number;
@@ -48,7 +49,7 @@ const getAuthHeaders = () => {
 
 // API Functions
 const createTeam = async (teamData: CreateTeamRequest) => {
-    const response = await axios.post("http://localhost:5000/api/team/create", teamData, {
+    const response = await axios.post(`${backend_api_url}/team/create`, teamData, {
         headers: getAuthHeaders()
     });
 
@@ -61,7 +62,7 @@ const createTeam = async (teamData: CreateTeamRequest) => {
 };
 
 const updateTeam = async ({ id, ...updateData }: UpdateTeamRequest & { id: number }) => {
-    const response = await axios.patch(`http://localhost:5000/api/team/update/${id}`, updateData, {
+    const response = await axios.patch(`${backend_api_url}/team/update/${id}`, updateData, {
         headers: getAuthHeaders()
     });
 
@@ -72,7 +73,7 @@ const updateTeam = async ({ id, ...updateData }: UpdateTeamRequest & { id: numbe
 };
 
 const deleteTeam = async (id: number) => {
-    const response = await axios.delete<ApiResponse>(`http://localhost:5000/api/team/delete/${id}`, {
+    const response = await axios.delete<ApiResponse>(`${backend_api_url}/team/delete/${id}`, {
         headers: getAuthHeaders(),
     });
 
@@ -80,35 +81,35 @@ const deleteTeam = async (id: number) => {
 };
 
 const getTeamById = async (id: number): Promise<Team> => {
-    const response = await axios.get(`http://localhost:5000/api/team/get/${id}`, {
+    const response = await axios.get(`${backend_api_url}/team/get/${id}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 export const getAllTeamsByOrg = async (orgId: number): Promise<Team[]> => {
-    const response = await axios.get(`http://localhost:5000/api/team/get-all/${orgId}`, {
+    const response = await axios.get(`${backend_api_url}/team/get-all/${orgId}`, {
         headers: getAuthHeaders()
     });
     return response.data.data;
 };
 
 const updateTeamLeader = async ({ id, ...updateData }: UpdateTeamLeaderRequest & { id: number }) => {
-    const response = await axios.patch(`http://localhost:5000/api/team/update-leader/${id}`, updateData, {
+    const response = await axios.patch(`${backend_api_url}/team/update-leader/${id}`, updateData, {
         headers: getAuthHeaders()
     });
     return response.data; // Return the full response data, not just response.data.data
 };
 
 const addMemberToTeam = async ({ id, ...updateData }: AddMemberToTeamRequest & { id: number }) => {
-    const response = await axios.post(`http://localhost:5000/api/team/add-member/${id}`, updateData, {
+    const response = await axios.post(`${backend_api_url}/team/add-member/${id}`, updateData, {
         headers: getAuthHeaders()
     });
     return response.data; // Return the full response data, not just response.data.data
 };
 
 const removeMemberFromTeam = async ({ id, ...updateData }: RemoveMemberFromTeamRequest & { id: number }) => {
-    const response = await axios.delete(`http://localhost:5000/api/team/remove-member/${id}`, {
+    const response = await axios.delete(`${backend_api_url}/team/remove-member/${id}`, {
         headers: {
             ...getAuthHeaders(),
             'Content-Type': 'application/json'
@@ -119,7 +120,7 @@ const removeMemberFromTeam = async ({ id, ...updateData }: RemoveMemberFromTeamR
 };
 
 const getTeamMembers = async (id: number) => {
-    const response = await axios.get(`http://localhost:5000/api/team/members/${id}`, {
+    const response = await axios.get(`${backend_api_url}/team/members/${id}`, {
         headers: getAuthHeaders()
     });
     console.log('Res from backend for members: ', response);

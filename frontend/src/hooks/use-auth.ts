@@ -10,6 +10,7 @@ import {
   getUserOwnedOrgs,
 } from "./use-users-org";
 import { toast } from "sonner";
+import { backend_api_url } from "@/constants";
 
 interface LoginRequest {
   email: string;
@@ -37,7 +38,7 @@ interface RegisterResponse {
 // API functions
 const loginUser = async (credentials: LoginRequest): Promise<AuthResponse> => {
   const response = await axios.post<AuthResponse>(
-    "http://localhost:5000/api/auth/login",
+    `${backend_api_url}/auth/login`,
     credentials
   );
   return response.data;
@@ -47,7 +48,7 @@ const registerUser = async (
   userData: RegisterRequest
 ): Promise<RegisterResponse> => {
   const response = await axios.post<RegisterResponse>(
-    "http://localhost:5000/api/auth/register",
+    `${backend_api_url}/auth/register`,
     userData
   );
   return response.data;
@@ -66,7 +67,7 @@ const getAuthToken = (): string | null => {
 
 export const getUserById = async (id: string) => {
   if (typeof window === "undefined") return null;
-  const response = await axios.get(`http://localhost:5000/api/user/get/${id}`);
+  const response = await axios.get(`${backend_api_url}/user/get/${id}`);
   return response.data;
 };
 
