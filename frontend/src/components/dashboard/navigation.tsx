@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useOrgStore } from "@/hooks/use-org-store";
-import { useOrgEvents } from "@/hooks/use-event";
 
 interface NavigationProps {
     events: number;
@@ -19,10 +18,6 @@ interface NavigationProps {
 export const Navigation = ({ events, teams }: NavigationProps) => {
     const pathname = usePathname();
     const { activeOrg } = useOrgStore();
-    const { data } = useOrgEvents(activeOrg?.id || 1);
-
-    const noOfEvents = data?.length;
-    const noOfTasks = 23;
 
     const isActive = (path: string) => {
         return pathname === path;

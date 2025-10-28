@@ -2,7 +2,7 @@ from config import db
 from lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from models import Budget, Organization, OrganizationMember, UserRole
+from models import Budget, Organization, OrganizationMember, OrgRole
 
 budget_bp = Blueprint("budget", __name__)
 
@@ -47,7 +47,7 @@ def create_budget(current_user):
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         # Check if user has permission to create budget (leader or coleader)
-        if membership.role not in [UserRole.LEADER, UserRole.COLEADER]:
+        if membership.role not in [OrgRole.LEADER, OrgRole.COLEADER]:
             return jsonify({"message": "Only leaders and co-leaders can create budgets"}), 403
 
         # Extract optional fields
@@ -149,7 +149,7 @@ def update_budget(current_user, budget_id):
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         # Check if user has permission to update budget (leader or coleader)
-        if membership.role not in [UserRole.LEADER, UserRole.COLEADER]:
+        if membership.role not in [OrgRole.LEADER, OrgRole.COLEADER]:
             return jsonify({"message": "Only leaders and co-leaders can update budgets"}), 403
 
         data = request.json
@@ -201,7 +201,7 @@ def delete_budget(current_user, budget_id):
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         # Check if user has permission to delete budget (leader or coleader)
-        if membership.role not in [UserRole.LEADER, UserRole.COLEADER]:
+        if membership.role not in [OrgRole.LEADER, OrgRole.COLEADER]:
             return jsonify({"message": "Only leaders and co-leaders can delete budgets"}), 403
 
         db.session.delete(budget)
@@ -231,7 +231,7 @@ def add_expense(current_user, budget_id):
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         # Check if user has permission to add expenses (leader or coleader)
-        if membership.role not in [UserRole.LEADER, UserRole.COLEADER]:
+        if membership.role not in [OrgRole.LEADER, OrgRole.COLEADER]:
             return jsonify({"message": "Only leaders and co-leaders can add expenses"}), 403
 
         data = request.json
@@ -281,7 +281,7 @@ def remove_expense(current_user, budget_id):
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         # Check if user has permission to remove expenses (leader or coleader)
-        if membership.role not in [UserRole.LEADER, UserRole.COLEADER]:
+        if membership.role not in [OrgRole.LEADER, OrgRole.COLEADER]:
             return jsonify({"message": "Only leaders and co-leaders can remove expenses"}), 403
 
         data = request.json

@@ -1,6 +1,6 @@
 from config import db
+from models import User
 from lib import generate_token
-from models import User, UserRole
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,9 +13,8 @@ def register():
     last_name = request.json.get("lastName")
     email = request.json.get("email")
     password = request.json.get("password")
-    role = request.json.get("role", UserRole.MEMBER)
 
-    if not all([first_name, last_name, email, password, role]):
+    if not all([first_name, last_name, email, password]):
         return jsonify({"message": "All fields are required!"}), 400
 
     existing_user = User.query.filter_by(email=email).first()
@@ -29,7 +28,6 @@ def register():
         last_name=last_name,
         email=email,
         password=hashed_password,
-        role=role,
     )
 
     try:

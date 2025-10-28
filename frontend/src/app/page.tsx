@@ -5,7 +5,7 @@ import Header from "@/components/home/header"
 import Contact from "@/components/home/contact"
 import Features from "@/components/home/features"
 import HowItWorks from "@/components/home/how-it-works"
-import Testimonial from "@/components/home/testimonial"
+// import Testimonial from "@/components/home/testimonial"
 
 export default function LandingPage() {
     return (
@@ -14,7 +14,7 @@ export default function LandingPage() {
             <Hero />
             <Features />
             <HowItWorks />
-            <Testimonial />
+            {/* <Testimonial /> */}
             <Contact />
             <CTA />
             <Footer />

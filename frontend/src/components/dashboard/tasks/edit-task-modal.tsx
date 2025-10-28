@@ -26,7 +26,6 @@ export const EditTaskModal = ({
     onClose,
     task,
     orgId,
-    teamId,
     onTaskUpdated
 }: EditTaskModalProps) => {
     const [formData, setFormData] = useState({
@@ -36,7 +35,6 @@ export const EditTaskModal = ({
         status: (task?.status || "pending") as string,
         dueDate: task?.dueDate || undefined as Date | undefined,
         eventId: task?.eventId || "",
-        userIds: task?.assignee ? [task.assignee.id] : [] as number[]
     });
 
     const [showCalendar, setShowCalendar] = useState(false);
@@ -126,7 +124,10 @@ export const EditTaskModal = ({
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
             const disabled = isDateDisabled(date);
-            const selected = isSameDay(formData.dueDate, date);
+            const selected = isSameDay(
+                formData.dueDate ? new Date(formData.dueDate) : undefined,
+                date
+            );
             const isToday = isSameDay(new Date(), date);
 
             days.push(
@@ -166,7 +167,6 @@ export const EditTaskModal = ({
                 status: task.status || "pending",
                 dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
                 eventId: task.eventId?.toString() || "",
-                userIds: task.assigneeId ? [task.assigneeId] : []
             });
             setSelectedEventId(task.eventId || null);
 
@@ -199,7 +199,7 @@ export const EditTaskModal = ({
                 description: formData.description.trim() || undefined,
                 priority: formData.priority,
                 status: formData.status,
-                dueDate: formData.dueDate.toISOString(),
+                dueDate: formData.dueDate.toLocaleString(),
             });
 
             onTaskUpdated();
@@ -301,7 +301,7 @@ export const EditTaskModal = ({
                             >
                                 <span className={formData.dueDate ? 'text-gray-900' : 'text-gray-400'}>
                                     {formData.dueDate
-                                        ? formData.dueDate.toLocaleDateString('en-US', {
+                                        ? formData.dueDate.toLocaleString('en-US', {
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric'

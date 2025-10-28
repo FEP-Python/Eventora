@@ -5,40 +5,40 @@ import { Award, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
-const Testimonial = () => {
-    const [activeTestimonial, setActiveTestimonial] = useState(0)
+const testimonials = [
+    {
+        name: "Sarah Chen",
+        role: "President, Tech Club",
+        college: "MIT",
+        content:
+            "Eventora transformed how we manage our events. From planning to execution, everything is streamlined and efficient.",
+        rating: 5,
+        avatar: "/placeholder.svg?height=60&width=60",
+    },
+    {
+        name: "Mike Rodriguez",
+        role: "Event Coordinator, Cultural Society",
+        college: "Stanford University",
+        content:
+            "The budget tracking feature saved us from overspending. We can now plan better and allocate resources efficiently.",
+        rating: 5,
+        avatar: "/placeholder.svg?height=60&width=60",
+    },
+    {
+        name: "Lisa Wang",
+        role: "Secretary, Student Council",
+        college: "Harvard University",
+        content: "Task management has never been easier. Our team productivity increased by 40% after using Eventora.",
+        rating: 5,
+        avatar: "/placeholder.svg?height=60&width=60",
+    },
+];
 
-    const testimonials = [
-        {
-            name: "Sarah Chen",
-            role: "President, Tech Club",
-            college: "MIT",
-            content:
-                "Eventora transformed how we manage our events. From planning to execution, everything is streamlined and efficient.",
-            rating: 5,
-            avatar: "/placeholder.svg?height=60&width=60",
-        },
-        {
-            name: "Mike Rodriguez",
-            role: "Event Coordinator, Cultural Society",
-            college: "Stanford University",
-            content:
-                "The budget tracking feature saved us from overspending. We can now plan better and allocate resources efficiently.",
-            rating: 5,
-            avatar: "/placeholder.svg?height=60&width=60",
-        },
-        {
-            name: "Lisa Wang",
-            role: "Secretary, Student Council",
-            college: "Harvard University",
-            content: "Task management has never been easier. Our team productivity increased by 40% after using Eventora.",
-            rating: 5,
-            avatar: "/placeholder.svg?height=60&width=60",
-        },
-    ]
+const Testimonial = () => {
+    const [activeTestimonial, setActiveTestimonial] = useState(0);
 
     return (
-        <section id='testimonials' className="py-20 bg-[#DAD7CD]">
+        <section id='testimonials' className="py-20 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
                     <Badge className="bg-[#3A5A40] text-white mb-4">

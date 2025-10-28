@@ -7,8 +7,10 @@ import { useEvent } from "@/hooks/use-event";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowLeft, Award, Building, Calendar, CheckCircle, Clock, Edit, Globe, Lock, Mail, MapPin, Trash, User, Users } from "lucide-react";
 import { DeleteEventDialog } from "./delete-event-dialog";
+import { AlertCircle, ArrowLeft, Award, Building, Calendar, CheckCircle, Clock, Edit, Globe, Lock, Mail, MapPin, Trash, Users } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useOrgMembers } from "@/hooks/use-org";
 
 
 interface EventDetailsProps {
@@ -18,8 +20,13 @@ interface EventDetailsProps {
 
 export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
     const router = useRouter();
+    const { data: currentUser } = useCurrentUser();
+    const { data: orgMembers } = useOrgMembers(orgId);
     const { data, isLoading } = useEvent(eventId);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+
+    const currentUserMember = orgMembers?.find((member) => member.id === currentUser?.id);
+    const currentUserRole = currentUserMember?.orgRole;
 
     const formatTime = (dateString: Date) => {
         return new Date(dateString).toLocaleTimeString("en-US", {
@@ -148,7 +155,7 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                             <div>
                                                 <p className="text-sm text-[#3A5A40]">Time</p>
                                                 <p className="font-medium text-[#344E41]">
-                                                    {formatTime(data.startDate)} - {formatTime(data.endDate)}
+                                                    {formatTime(new Date(data.startDate))} - {formatTime(new Date(data.endDate))}
                                                 </p>
                                             </div>
                                         </div>
@@ -174,24 +181,26 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex flex-col sm:flex-row gap-3 lg:min-w-[200px]">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => router.push(`/orgs/${orgId}/events/${eventId}/edit`)}
-                                        className="border-[#A3B18A]/30 text-[#3A5A40] hover:bg-[#A3B18A]/10 bg-transparent"
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() => setOpenDeleteDialog(true)}
-                                        className="hover:bg-destructive/70"
-                                    >
-                                        <Trash className="h-4 w-4" />
-                                        Delete
-                                    </Button>
-                                </div>
+                                {(currentUserRole === 'leader' || currentUserRole === 'coleader') && (
+                                    <div className="flex flex-col sm:flex-row gap-3 lg:min-w-[200px]">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => router.push(`/orgs/${orgId}/events/${eventId}/edit`)}
+                                            className="border-[#A3B18A]/30 text-[#3A5A40] hover:bg-[#A3B18A]/10 bg-transparent"
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={() => setOpenDeleteDialog(true)}
+                                            className="hover:bg-destructive/70"
+                                        >
+                                            <Trash className="h-4 w-4" />
+                                            Delete
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -217,8 +226,8 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                         </p>
                                         <p className="text-sm text-[#3A5A40]">
                                             {isRegistrationOpen()
-                                                ? `Registration deadline: ${format(data.registrationDeadline, 'do MMM yyyy')}`
-                                                : `Registration closed on ${format(data.registrationDeadline, 'do MMM yyyy')}`}
+                                                ? `Registration deadline: ${format(data.registrationDeadline!, 'do MMM yyyy')}`
+                                                : `Registration closed on ${format(data.registrationDeadline!, 'do MMM yyyy')}`}
                                         </p>
                                     </div>
                                     {daysUntilEvent() > 0 && (
@@ -297,16 +306,12 @@ export const EventDetails = ({ orgId, eventId }: EventDetailsProps) => {
                                     <Mail className="h-5 w-5 text-[#588157]" />
                                     <span className="text-[#3A5A40]">{data.creator?.email}</span>
                                 </div>
-                                <div className="flex items-center space-x-3">
-                                    <User className="h-5 w-5 text-[#588157]" />
-                                    <span className="text-[#3A5A40] capitalize">{data.creator?.role}</span>
-                                </div>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
             </div>
-            <DeleteEventDialog 
+            <DeleteEventDialog
                 eventId={eventId}
                 open={openDeleteDialog}
                 onClose={setOpenDeleteDialog}

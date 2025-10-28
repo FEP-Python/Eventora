@@ -1,13 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useOrgStore } from '@/hooks/use-org-store';
 import { useUserAllOrgs } from '@/hooks/use-users-org';
 
 const DashboardPage = () => {
-    const router = useRouter();
     const { setActiveOrg, activeOrg } = useOrgStore();
-    const { data: orgs = [], isLoading, error, hasOrganizations } = useUserAllOrgs();
+    const { data: orgs = [], isLoading, error } = useUserAllOrgs();
 
     if(isLoading) {
         return <div>Loading dashboard...</div>

@@ -181,7 +181,7 @@ export const useUpdateEvent = () => {
 
     return useMutation({
         mutationFn: updateEvent,
-        onSuccess: (data, variables) => {
+        onSuccess: (data) => {
             console.log("Update event success response:", data);
 
             // Update the specific event in cache

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -175,6 +176,21 @@ export const CreateTaskModal = ({
         }
     }, [isOpen]);
 
+    const handleUserToggle = (userId: number) => {
+        setFormData(prev => ({
+            ...prev,
+            userIds: prev.userIds.includes(userId)
+                ? prev.userIds.filter(id => id !== userId)
+                : [...prev.userIds, userId]
+        }));
+    };
+
+    const handleEventChange = (eventId: string) => {
+        const id = eventId === "none" ? null : parseInt(eventId);
+        setSelectedEventId(id);
+        setFormData(prev => ({ ...prev, eventId: eventId === "none" ? "" : eventId }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -189,7 +205,7 @@ export const CreateTaskModal = ({
         }
 
         try {
-            await createTaskMutation.mutateAsync({
+            createTaskMutation.mutate({
                 eventId: selectedEventId || 0,
                 teamId,
                 orgId,
@@ -206,21 +222,6 @@ export const CreateTaskModal = ({
         } catch (error) {
             console.error("Error creating task:", error);
         }
-    };
-
-    const handleUserToggle = (userId: number) => {
-        setFormData(prev => ({
-            ...prev,
-            userIds: prev.userIds.includes(userId)
-                ? prev.userIds.filter(id => id !== userId)
-                : [...prev.userIds, userId]
-        }));
-    };
-
-    const handleEventChange = (eventId: string) => {
-        const id = eventId === "none" ? null : parseInt(eventId);
-        setSelectedEventId(id);
-        setFormData(prev => ({ ...prev, eventId: eventId === "none" ? "" : eventId }));
     };
 
     return (

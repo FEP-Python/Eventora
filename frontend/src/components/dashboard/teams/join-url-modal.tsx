@@ -30,7 +30,7 @@ export const JoinUrlModal = () => {
             setTimeout(() => {
                 setCopied(false);
             }, 2000);
-        } catch (err) {
+        } catch {
             toast.error("Failed to copy URL");
         }
     };
@@ -38,7 +38,7 @@ export const JoinUrlModal = () => {
     return (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${isModalOpen ? 'block' : 'hidden'}`}>
             <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div>
                         <h3 className="text-lg font-semibold">Share Club Invite</h3>
                         <p className="text-sm text-gray-600 mt-1">
@@ -46,44 +46,38 @@ export const JoinUrlModal = () => {
                         </p>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="joinUrl">Join URL</Label>
-                        <div className="flex space-x-2">
-                            <Input
-                                id="joinUrl"
-                                value={joinUrl}
-                                readOnly
-                                className="flex-1"
-                            />
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={copyToClipboard}
-                                className="px-3"
-                            >
-                                {copied ? (
-                                    <Check className="h-4 w-4 text-green-600" />
-                                ) : (
-                                    <Copy className="h-4 w-4" />
-                                )}
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="joinUrl">Join URL</Label>
+                            <div className="flex space-x-2">
+                                <Input
+                                    id="joinUrl"
+                                    value={joinUrl}
+                                    readOnly
+                                    className="flex-1"
+                                />
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={copyToClipboard}
+                                    className="px-3 border border-gray-300 shadow-sm bg-white"
+                                >
+                                    {copied ? (
+                                        <Check className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                        <Copy className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <p>Club Code: <span className="font-semibold">{activeOrg.code}</span></p>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="green" onClick={closeModal}>
+                                Close
                             </Button>
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="orgCode">Club Code</Label>
-                        <Input
-                            id="orgCode"
-                            value={activeOrg.code}
-                            readOnly
-                            className="font-mono text-center text-lg font-semibold"
-                        />
-                    </div>
-
-                    <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={closeModal}>
-                            Close
-                        </Button>
                     </div>
                 </div>
             </div>

@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Search, UserPlus, Users, X, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Search, UserPlus, Users, X, Check, Crown, Shield, User as UserIcon } from "lucide-react";
 import { useModalStore } from "@/hooks/use-modal-store";
 import { useOrgStore } from "@/hooks/use-org-store";
 import { useOrgTeams } from "@/hooks/use-team";
@@ -18,6 +19,7 @@ import { useAddMemberToTeam } from "@/hooks/use-team";
 import { useOrgMembers } from "@/hooks/use-org";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { OrgRole } from "@/type";
 
 const toInitials = (firstName?: string, lastName?: string) => {
     const f = (firstName || "").trim();
@@ -25,28 +27,73 @@ const toInitials = (firstName?: string, lastName?: string) => {
     return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase() || "U";
 };
 
+const getRoleIcon = (role: OrgRole) => {
+    switch (role) {
+        case "leader":
+            return Crown;
+        case "coleader":
+            return Shield;
+        default:
+            return UserIcon;
+    }
+};
+
+const getRoleColor = (role: OrgRole) => {
+    switch (role) {
+        case "leader":
+            return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        case "coleader":
+            return "bg-blue-100 text-blue-800 border-blue-200";
+        case "volunteer":
+            return "bg-green-100 text-green-800 border-green-200";
+        default:
+            return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+};
+
+const getRoleLabel = (role: OrgRole) => {
+    switch (role) {
+        case "leader":
+            return "Leader";
+        case "coleader":
+            return "Co-Leader";
+        case "volunteer":
+            return "Volunteer";
+        case "member":
+            return "Member";
+        default:
+            return "Member";
+    }
+};
+
 export const ManageMembersModal = () => {
     const { isOpen, closeModal, type } = useModalStore();
     const { activeOrg } = useOrgStore();
     const queryClient = useQueryClient();
-    const { data: teams = [], isLoading: teamsLoading, refetch: refetchTeams } = useOrgTeams(activeOrg?.id || 0);
+    const { data: teams = [], isLoading: teamsLoading } = useOrgTeams(activeOrg?.id || 0);
     const { data: members = [], isLoading: membersLoading } = useOrgMembers(activeOrg?.id || 0);
-    const { mutate: addMemberToTeam, isPending: isAdding } = useAddMemberToTeam();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTeam, setSelectedTeam] = useState<string>("");
     const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+    const [isAdding, setIsAdding] = useState(false);
 
     const isModalOpen = isOpen && type === "manageMembers";
 
-    // Filter members based on search term - with null safety
+    // Get team-specific mutation hook
+    const teamId = selectedTeam ? parseInt(selectedTeam) : 0;
+    const { mutate: addMemberToTeam } = useAddMemberToTeam(teamId);
+
+    // Filter members based on search term
     const filteredMembers = useMemo(() => {
         if (!searchTerm.trim()) return members;
 
+        const search = searchTerm.toLowerCase();
         return members.filter(member =>
-            `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (member.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (member.college || '').toLowerCase().includes(searchTerm.toLowerCase())
+            `${member.firstName || ""} ${member.lastName || ""}`.toLowerCase().includes(search) ||
+            (member.email || "").toLowerCase().includes(search) ||
+            (member.college || "").toLowerCase().includes(search) ||
+            (member.orgRole || "").toLowerCase().includes(search)
         );
     }, [members, searchTerm]);
 
@@ -61,6 +108,31 @@ export const ManageMembersModal = () => {
         return filteredMembers.filter(member => !teamMemberIds.includes(member.id));
     }, [filteredMembers, selectedTeam, teams]);
 
+    // Sort members: leaders first, then by name
+    const sortedAvailableMembers = useMemo(() => {
+        return [...availableMembers].sort((a, b) => {
+            // Sort by role hierarchy
+            const roleOrder: Record<OrgRole, number> = {
+                leader: 1,
+                coleader: 2,
+                member: 3,
+                volunteer: 4
+            };
+
+            const aOrder = roleOrder[a.orgRole] || 999;
+            const bOrder = roleOrder[b.orgRole] || 999;
+
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+
+            // Sort alphabetically if same role
+            const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+            const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+            return aName.localeCompare(bName);
+        });
+    }, [availableMembers]);
+
     const handleMemberSelection = (memberId: number) => {
         setSelectedMembers(prev =>
             prev.includes(memberId)
@@ -70,79 +142,66 @@ export const ManageMembersModal = () => {
     };
 
     const handleSelectAll = () => {
-        if (selectedMembers.length === availableMembers.length) {
+        if (selectedMembers.length === sortedAvailableMembers.length) {
             setSelectedMembers([]);
         } else {
-            setSelectedMembers(availableMembers.map(member => member.id));
+            setSelectedMembers(sortedAvailableMembers.map(member => member.id));
         }
     };
 
-    const handleAddToTeam = () => {
+    const handleAddToTeam = async () => {
         if (!selectedTeam || selectedMembers.length === 0) {
             toast.error("Please select a team and members");
             return;
         }
 
         const teamName = teams.find(t => t.id === parseInt(selectedTeam))?.name || "team";
-        const memberNames = selectedMembers.map(id => {
-            const member = members.find(m => m.id === id);
-            return `${member?.firstName} ${member?.lastName}`;
-        }).join(", ");
 
+        setIsAdding(true);
         let successCount = 0;
         let errorCount = 0;
-        const totalMembers = selectedMembers.length;
 
-        // Add each selected member to the team
-        selectedMembers.forEach((memberId, index) => {
-            addMemberToTeam(
-                { id: parseInt(selectedTeam), memberId },
-                {
-                    onSuccess: () => {
-                        successCount++;
-                        if (successCount + errorCount === totalMembers) {
-                            // All operations completed
-                            if (successCount > 0) {
-                                toast.success(`Successfully added ${successCount} member${successCount > 1 ? 's' : ''} to ${teamName}!`);
-                            }
-                            if (errorCount > 0) {
-                                toast.error(`${errorCount} member${errorCount > 1 ? 's' : ''} could not be added (may already be in team)`);
-                            }
-
-                            // Force refresh of all team-related data
-                            queryClient.invalidateQueries({ queryKey: ["teams", "org", activeOrg?.id] });
-                            queryClient.invalidateQueries({ queryKey: ["teams", "org"] });
-                            queryClient.invalidateQueries({ queryKey: ["team"] });
-
-                            setSelectedMembers([]);
-                            setSelectedTeam("");
-                            closeModal();
-                        }
-                    },
-                    onError: (error: any) => {
-                        errorCount++;
-                        if (successCount + errorCount === totalMembers) {
-                            // All operations completed
-                            if (successCount > 0) {
-                                toast.success(`Successfully added ${successCount} member${successCount > 1 ? 's' : ''} to ${teamName}!`);
-                            }
-                            if (errorCount > 0) {
-                                toast.error(`${errorCount} member${errorCount > 1 ? 's' : ''} could not be added (may already be in team)`);
-                            }
-
-                            // Force refresh of all team-related data
-                            queryClient.invalidateQueries({ queryKey: ["teams", "org", activeOrg?.id] });
-                            queryClient.invalidateQueries({ queryKey: ["teams", "org"] });
-                            queryClient.invalidateQueries({ queryKey: ["team"] });
-
-                            setSelectedMembers([]);
-                            setSelectedTeam("");
-                            closeModal();
+        // Process each member
+        const promises = selectedMembers.map((memberId) => {
+            return new Promise<void>((resolve) => {
+                addMemberToTeam(
+                    { memberId },
+                    {
+                        onSuccess: () => {
+                            successCount++;
+                            resolve();
+                        },
+                        onError: () => {
+                            errorCount++;
+                            resolve();
                         }
                     }
-                }
-            );
+                );
+            });
         });
+
+        // Wait for all operations to complete
+        await Promise.all(promises);
+
+        // Show results
+        if (successCount > 0) {
+            toast.success(`Successfully added ${successCount} member${successCount > 1 ? 's' : ''} to ${teamName}!`);
+        }
+        if (errorCount > 0) {
+            toast.error(`${errorCount} member${errorCount > 1 ? 's' : ''} could not be added (may already be in team)`);
+        }
+
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ["teams", "org", activeOrg?.id] });
+        queryClient.invalidateQueries({ queryKey: ["team", parseInt(selectedTeam)] });
+        queryClient.invalidateQueries({ queryKey: ["team-members", parseInt(selectedTeam)] });
+        queryClient.invalidateQueries({ queryKey: ["org-details", activeOrg?.id] });
+
+        // Reset and close
+        setIsAdding(false);
+        setSelectedMembers([]);
+        setSelectedTeam("");
+        closeModal();
     };
 
     const resetModal = () => {
@@ -154,30 +213,26 @@ export const ManageMembersModal = () => {
 
     if (!activeOrg) return null;
 
-    return (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ${isModalOpen ? 'block' : 'hidden'}`}>
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-900">Manage Team Members</h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Add club members to teams
-                        </p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={resetModal}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
+    const selectedTeamData = teams.find(t => t.id === parseInt(selectedTeam));
 
-                <div className="flex h-[calc(90vh-120px)]">
-                    {/* Left Panel - Members */}
-                    <div className="flex-1 border-r">
+    return (
+        <Dialog open={isModalOpen} onOpenChange={(open) => !open && resetModal()}>
+            <DialogContent className="!w-full !max-w-5xl max-h-[90vh] p-0">
+                <DialogHeader className="p-6 pb-0">
+                    <DialogTitle className="text-xl font-semibold">Manage Team Members</DialogTitle>
+                    <DialogDescription>
+                        Add organization members to teams
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex h-[calc(90vh-140px)]">
+                    {/* Right Panel - Members List */}
+                    <div className="flex-1 border-l overflow-hidden flex flex-col order-2">
                         <div className="p-6 space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="font-medium text-gray-900">Available Members</h3>
                                 <Badge variant="secondary">
-                                    {availableMembers.length} members
+                                    {sortedAvailableMembers.length} available
                                 </Badge>
                             </div>
 
@@ -185,90 +240,118 @@ export const ManageMembersModal = () => {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input
-                                    placeholder="Search members by name, email, or college..."
+                                    placeholder="Search by name, email, role, or college..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-9"
                                 />
                             </div>
 
                             {/* Select All */}
-                            {availableMembers.length > 0 && (
+                            {sortedAvailableMembers.length > 0 && selectedTeam && (
                                 <div className="flex items-center space-x-2 py-2">
                                     <Checkbox
                                         id="select-all"
-                                        checked={selectedMembers.length === availableMembers.length && availableMembers.length > 0}
+                                        checked={selectedMembers.length === sortedAvailableMembers.length && sortedAvailableMembers.length > 0}
                                         onCheckedChange={handleSelectAll}
                                     />
-                                    <Label htmlFor="select-all" className="text-sm font-medium">
-                                        Select All ({availableMembers.length})
+                                    <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                                        Select All ({sortedAvailableMembers.length} members)
                                     </Label>
                                 </div>
                             )}
+                        </div>
 
-                            {/* Members List */}
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {/* Members List - Scrollable */}
+                        <div className="flex-1 overflow-y-auto px-6 pb-6">
+                            <div className="space-y-2">
                                 {membersLoading ? (
-                                    <div className="flex items-center justify-center py-8">
+                                    <div className="flex items-center justify-center py-12">
                                         <div className="text-sm text-gray-500">Loading members...</div>
                                     </div>
-                                ) : availableMembers.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                                        <Users className="h-8 w-8 text-gray-400 mb-2" />
-                                        <p className="text-sm text-gray-500">
-                                            {searchTerm ? "No members found matching your search" : "No available members"}
+                                ) : !selectedTeam ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <Users className="h-12 w-12 text-gray-300 mb-3" />
+                                        <p className="text-sm font-medium text-gray-900 mb-1">Select a Team First</p>
+                                        <p className="text-xs text-gray-500">Choose a team from the right panel to see available members</p>
+                                    </div>
+                                ) : sortedAvailableMembers.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                                        <Users className="h-12 w-12 text-gray-300 mb-3" />
+                                        <p className="text-sm font-medium text-gray-900 mb-1">
+                                            {searchTerm ? "No members found" : "All members already in team"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {searchTerm ? "Try adjusting your search" : "Everyone is already part of this team"}
                                         </p>
                                     </div>
                                 ) : (
-                                    availableMembers.map((member) => (
-                                        <Card
-                                            key={member.id}
-                                            className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${selectedMembers.includes(member.id)
-                                                ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                                : 'hover:bg-gray-50'
-                                                }`}
-                                            onClick={() => handleMemberSelection(member.id)}
-                                        >
-                                            <CardContent className="p-4">
-                                                <div className="flex items-center space-x-3">
-                                                    <Checkbox
-                                                        checked={selectedMembers.includes(member.id)}
-                                                        onChange={() => { }} // Handled by card click
-                                                    />
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={undefined} />
-                                                        <AvatarFallback className="bg-gray-100">
-                                                            {toInitials(member.firstName, member.lastName)}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center space-x-2">
-                                                            <p className="font-medium text-gray-900 truncate">
-                                                                {member.firstName} {member.lastName}
-                                                            </p>
-                                                            {selectedMembers.includes(member.id) && (
-                                                                <Check className="h-4 w-4 text-blue-600" />
-                                                            )}
+                                    sortedAvailableMembers.map((member) => {
+                                        const RoleIcon = getRoleIcon(member.orgRole);
+                                        const roleColor = getRoleColor(member.orgRole);
+                                        const isSelected = selectedMembers.includes(member.id);
+
+                                        return (
+                                            <Card
+                                                key={member.id}
+                                                className={`cursor-pointer transition-all duration-200 ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200'
+                                                    : 'hover:bg-gray-50 hover:shadow-sm'
+                                                    }`}
+                                                onClick={() => handleMemberSelection(member.id)}
+                                            >
+                                                <CardContent className="p-3">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            onCheckedChange={() => handleMemberSelection(member.id)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                        <Avatar className="h-10 w-10 ring-2 ring-gray-100">
+                                                            <AvatarImage src={undefined} />
+                                                            <AvatarFallback>
+                                                                {toInitials(member.firstName, member.lastName)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center space-x-2 mb-1">
+                                                                <p className="font-medium text-gray-900 truncate">
+                                                                    {member.firstName} {member.lastName}
+                                                                </p>
+                                                                {isSelected && (
+                                                                    <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-gray-600 truncate mb-1">{member.email}</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant="outline" className={`text-xs ${roleColor}`}>
+                                                                    <RoleIcon className="h-3 w-3 mr-1" />
+                                                                    {getRoleLabel(member.orgRole)}
+                                                                </Badge>
+                                                                {member.isOwner && (
+                                                                    <Badge className="text-xs bg-purple-100 text-purple-800">
+                                                                        Owner
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <p className="text-sm text-gray-600 truncate">{member.email}</p>
-                                                        <p className="text-xs text-gray-500">{member.college}</p>
                                                     </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Panel - Team Selection & Actions */}
-                    <div className="w-80 p-6 space-y-6">
+                    {/* Left Panel - Team Selection & Actions */}
+                    <div className="w-96 p-6 space-y-6 overflow-y-auto order-1">
                         <div>
-                            <h3 className="font-medium text-gray-900 mb-4">Add to Team</h3>
+                            <h3 className="font-medium text-gray-900 mb-4">Select Team</h3>
 
                             <div className="space-y-2">
-                                <Label>Select Team</Label>
+                                <Label>Team</Label>
                                 <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Choose a team" />
@@ -286,9 +369,9 @@ export const ManageMembersModal = () => {
                                             teams.map((team) => (
                                                 <SelectItem key={team.id} value={team.id.toString()}>
                                                     <div className="flex items-center justify-between w-full">
-                                                        <span>{team.name}</span>
+                                                        <span className="font-medium">{team.name}</span>
                                                         <Badge variant="outline" className="ml-2">
-                                                            {team.members?.length || 0}
+                                                            {team.members?.length || 0} members
                                                         </Badge>
                                                     </div>
                                                 </SelectItem>
@@ -297,42 +380,58 @@ export const ManageMembersModal = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {/* Selected Team Info */}
+                            {selectedTeamData && (
+                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                    <p className="text-xs text-gray-600 mb-1">Team Description</p>
+                                    <p className="text-sm text-gray-900">
+                                        {selectedTeamData.description || "No description provided"}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Selected Members Summary */}
                         {selectedMembers.length > 0 && (
                             <Card>
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-sm font-medium">
-                                        Selected Members ({selectedMembers.length})
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        <span>Selected Members</span>
+                                        <Badge variant="secondary">{selectedMembers.length}</Badge>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    <div className="space-y-2 max-h-48 overflow-y-auto p-0">
                                         {selectedMembers.map(memberId => {
                                             const member = members.find(m => m.id === memberId);
-                                            return member ? (
-                                                <div key={memberId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                                                    <div className="flex items-center space-x-2">
+                                            if (!member) return null;
+
+                                            return (
+                                                <div key={memberId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors">
+                                                    <div className="flex items-center space-x-2 flex-1 min-w-0">
                                                         <Avatar className="h-6 w-6">
                                                             <AvatarFallback className="text-xs">
                                                                 {toInitials(member.firstName, member.lastName)}
                                                             </AvatarFallback>
                                                         </Avatar>
-                                                        <span className="text-sm font-medium">
+                                                        <span className="text-sm font-medium truncate">
                                                             {member.firstName} {member.lastName}
                                                         </span>
                                                     </div>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleMemberSelection(memberId)}
-                                                        className="h-6 w-6 p-0"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleMemberSelection(memberId);
+                                                        }}
+                                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </Button>
                                                 </div>
-                                            ) : null;
+                                            );
                                         })}
                                     </div>
                                 </CardContent>
@@ -347,11 +446,12 @@ export const ManageMembersModal = () => {
                                 onClick={handleAddToTeam}
                                 disabled={!selectedTeam || selectedMembers.length === 0 || isAdding}
                                 className="w-full"
+                                size="lg"
                             >
                                 {isAdding ? (
                                     <>
                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                                        Adding...
+                                        Adding Members...
                                     </>
                                 ) : (
                                     <>
@@ -361,13 +461,19 @@ export const ManageMembersModal = () => {
                                 )}
                             </Button>
 
-                            <Button variant="outline" onClick={resetModal} className="w-full">
+                            <Button variant="outline" onClick={resetModal} className="w-full" disabled={isAdding}>
                                 Cancel
                             </Button>
                         </div>
+
+                        {/* Help Text */}
+                        <div className="text-xs text-gray-500 space-y-1">
+                            <p>💡 <strong>Tip:</strong> Select a team first to see available members</p>
+                            <p>✅ Members are filtered to show only those not already in the selected team</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };

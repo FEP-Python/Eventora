@@ -1,26 +1,17 @@
 "use client";
 
-import { Crown, Mail, Shield, User, UserPlus, Settings } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Team, User as UserType } from "@/type"
-import { useRemoveMemberFromTeam, useUpdateTeamLeader } from "@/hooks/use-team"
-import { useState } from "react"
-import { toast } from "sonner"
-import { useModalStore } from "@/hooks/use-modal-store"
+import { OrgMember, OrgRole } from "@/type";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useModalStore } from "@/hooks/use-modal-store";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Crown, Mail, Shield, User, UserPlus, Settings, Users } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AllMembersProps {
-    teams: Team[];
-    currentUserId?: number;
+    members: OrgMember[];
     canManageMembers?: boolean;
-}
-
-type MemberWithTeam = UserType & {
-    teamId: number;
-    teamName: string;
-    isTeamLeader: boolean;
 }
 
 const toInitials = (firstName?: string, lastName?: string) => {
@@ -29,120 +20,99 @@ const toInitials = (firstName?: string, lastName?: string) => {
     return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase() || "U";
 };
 
-const getRoleIcon = (role: string) => {
-    switch (role.toLowerCase()) {
-        case "team lead":
+const getRoleIcon = (role: OrgRole) => {
+    switch (role) {
+        case "leader":
             return Crown
-        case "coordinator":
+        case "coleader":
             return Shield
+        case "volunteer":
+            return UserPlus
         default:
             return User
     }
 }
 
-const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
-        case "team lead":
-            return "bg-yellow-100 text-yellow-800"
-        case "coordinator":
-            return "bg-blue-100 text-blue-800"
+const getRoleColor = (role: OrgRole) => {
+    switch (role) {
+        case "leader":
+            return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        case "coleader":
+            return "bg-blue-100 text-blue-800 border-blue-200"
+        case "volunteer":
+            return "bg-green-100 text-green-800 border-green-200"
         default:
-            return "bg-gray-100 text-gray-800"
+            return "bg-gray-100 text-gray-800 border-gray-200"
     }
 }
 
-const getMemberType = (member: MemberWithTeam): "leader" | "coordinator" | "member" => {
-    const role = member.role?.toLowerCase() || "";
-    if (role.includes("lead")) return "leader";
-    if (role.includes("coordinator")) return "coordinator";
-    return "member";
-};
-
-const getMemberTypeBadge = (type: "leader" | "coordinator" | "member") => {
-    switch (type) {
+const getRoleLabel = (role: OrgRole) => {
+    switch (role) {
         case "leader":
-            return "bg-purple-100 text-purple-800"
-        case "coordinator":
-            return "bg-blue-100 text-blue-800"
+            return "Leader"
+        case "coleader":
+            return "Co-Leader"
+        case "volunteer":
+            return "Volunteer"
+        case "member":
+            return "Member"
         default:
-            return "bg-gray-100 text-gray-800"
+            return "Member"
     }
+}
+
+// Sort members by role hierarchy
+const sortMembersByRole = (members: OrgMember[]): OrgMember[] => {
+    const roleOrder: Record<OrgRole, number> = {
+        leader: 1,
+        coleader: 2,
+        member: 3,
+        volunteer: 4
+    };
+
+    return [...members].sort((a, b) => {
+        const aOrder = roleOrder[a.orgRole] || 999;
+        const bOrder = roleOrder[b.orgRole] || 999;
+
+        if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+        }
+
+        // If same role, sort alphabetically by name
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+        return aName.localeCompare(bName);
+    });
 };
 
-export const AllMembers = ({ teams, currentUserId, canManageMembers = false }: AllMembersProps) => {
-    const [removingMemberId, setRemovingMemberId] = useState<number | null>(null);
-    const removeMemberMutation = useRemoveMemberFromTeam();
-    const updateLeaderMutation = useUpdateTeamLeader();
-    const { openModal } = useModalStore();
-
-    // Flatten members with team info
-    const allMembers: MemberWithTeam[] = teams.flatMap(team =>
-        (team.members || []).map(member => ({
-            ...member,
-            teamId: team.id,
-            teamName: team.name,
-            isTeamLeader: team.leaderId === member.id
-        }))
-    );
-
-    // Remove duplicates (members in multiple teams)
-    const uniqueMembers = allMembers.reduce((acc, member) => {
-        const existing = acc.find(m => m.id === member.id);
-        if (!existing) {
-            acc.push(member);
-        } else {
-            // If member is in multiple teams, show the team where they're a leader
-            if (member.isTeamLeader && !existing.isTeamLeader) {
-                const index = acc.findIndex(m => m.id === member.id);
-                acc[index] = member;
-            }
+// Group members by role
+const groupMembersByRole = (members: OrgMember[]) => {
+    return members.reduce((acc, member) => {
+        const role = member.orgRole || "member";
+        if (!acc[role]) {
+            acc[role] = [];
         }
+        acc[role].push(member);
         return acc;
-    }, [] as MemberWithTeam[]);
+    }, {} as Record<OrgRole, OrgMember[]>);
+};
 
-    const handleRemoveMember = async (member: MemberWithTeam) => {
-        if (!canManageMembers) {
-            toast.error("You don't have permission to remove members");
-            return;
-        }
+export const AllMembers = ({ members, canManageMembers = false }: AllMembersProps) => {
+    const { openModal } = useModalStore();
+    const { data: currentUser } = useCurrentUser();
 
-        if (member.isTeamLeader) {
-            toast.error("Cannot remove team leader. Assign a new leader first.");
-            return;
-        }
+    const sortedMembers = sortMembersByRole(members);
+    const groupedMembers = groupMembersByRole(members);
 
-        setRemovingMemberId(member.id);
-        try {
-            await removeMemberMutation.mutateAsync({
-                id: member.teamId,
-                memberId: member.id
-            });
-            toast.success(`${member.firstName} ${member.lastName} removed from team`);
-        } catch (error) {
-            toast.error("Failed to remove member");
-        } finally {
-            setRemovingMemberId(null);
-        }
+    const isCurrentUser = (member: OrgMember) => currentUser?.id === member.id;
+
+    // Get role statistics
+    const roleStats = {
+        leaders: groupedMembers.leader?.length || 0,
+        coleaders: groupedMembers.coleader?.length || 0,
+        members: groupedMembers.member?.length || 0,
+        volunteers: groupedMembers.volunteer?.length || 0,
     };
-
-    const handlePromoteToLeader = async (member: MemberWithTeam) => {
-        if (!canManageMembers) {
-            toast.error("You don't have permission to change team leadership");
-            return;
-        }
-
-        try {
-            await updateLeaderMutation.mutateAsync({
-                id: member.teamId,
-                leaderId: member.id
-            });
-            toast.success(`${member.firstName} ${member.lastName} promoted to team leader`);
-        } catch (error) {
-            toast.error("Failed to promote member");
-        }
-    };
-
-    const isCurrentUser = (member: MemberWithTeam) => currentUserId === member.id;
 
     return (
         <div className="mt-12">
@@ -150,89 +120,129 @@ export const AllMembers = ({ teams, currentUserId, canManageMembers = false }: A
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>All Members</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5" />
+                                Club Members
+                            </CardTitle>
                             <CardDescription className="mt-1">
-                                Complete directory of club members ({uniqueMembers.length} total)
+                                Complete directory of all club members ({sortedMembers.length} total)
                             </CardDescription>
                         </div>
-                        <div className="flex space-x-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openModal("teamMembersManagement")}
-                            >
-                                <Settings className="h-4 w-4 mr-2" />
-                                Manage All Members
-                            </Button>
+                        {/* <div className="flex space-x-2">
                             {canManageMembers && (
-                                <Button variant="outline" size="sm">
-                                    <UserPlus className="h-4 w-4 mr-2" />
-                                    Invite Member
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openModal("manageMembers")}
+                                    >
+                                        <Settings className="h-4 w-4 mr-2" />
+                                        Manage Members
+                                    </Button>
+                                </>
                             )}
-                        </div>
+                        </div> */}
+                    </div>
+
+                    {/* Role Statistics */}
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                        {roleStats.leaders > 0 && (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                <Crown className="h-3 w-3 mr-1" />
+                                {roleStats.leaders} Leader{roleStats.leaders !== 1 ? 's' : ''}
+                            </Badge>
+                        )}
+                        {roleStats.coleaders > 0 && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <Shield className="h-3 w-3 mr-1" />
+                                {roleStats.coleaders} Co-Leader{roleStats.coleaders !== 1 ? 's' : ''}
+                            </Badge>
+                        )}
+                        {roleStats.members > 0 && (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                                <User className="h-3 w-3 mr-1" />
+                                {roleStats.members} Member{roleStats.members !== 1 ? 's' : ''}
+                            </Badge>
+                        )}
+                        {roleStats.volunteers > 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <UserPlus className="h-3 w-3 mr-1" />
+                                {roleStats.volunteers} Volunteer{roleStats.volunteers !== 1 ? 's' : ''}
+                            </Badge>
+                        )}
                     </div>
                 </CardHeader>
+
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {uniqueMembers.map((member) => {
-                            const memberType = getMemberType(member);
+                        {sortedMembers.map((member) => {
                             const fullName = `${member.firstName} ${member.lastName}`.trim();
-                            const RoleIcon = getRoleIcon(member.role || "");
+                            const RoleIcon = getRoleIcon(member.orgRole);
+                            const roleColor = getRoleColor(member.orgRole);
+                            const roleLabel = getRoleLabel(member.orgRole);
 
                             return (
-                                <div key={member.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                                    onClick={() => openModal("teamMembersManagement")}>
+                                <div
+                                    key={member.id}
+                                    className="border rounded-lg p-4 hover:bg-gray-50 transition-colors hover:shadow-sm"
+                                >
                                     <div className="flex items-start space-x-3">
-                                        <Avatar className="h-10 w-10">
+                                        <Avatar className="h-12 w-12 ring-2 ring-gray-100">
                                             <AvatarImage src={undefined} />
-                                            <AvatarFallback>
+                                            <AvatarFallback className="text-sm font-medium">
                                                 {toInitials(member.firstName, member.lastName)}
                                             </AvatarFallback>
                                         </Avatar>
 
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <h3 className="font-medium text-gray-900 truncate">
+                                            {/* Name and "You" badge */}
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h3 className="font-semibold text-gray-900 truncate">
                                                     {fullName || "Unnamed User"}
                                                 </h3>
                                                 {isCurrentUser(member) && (
-                                                    <Badge variant="outline" className="text-xs">
+                                                    <Badge variant="secondary" className="text-xs">
                                                         You
                                                     </Badge>
                                                 )}
                                             </div>
 
-                                            <div className="space-y-1 mb-2">
-                                                <div className="flex items-center space-x-2">
-                                                    <Badge className={`text-xs ${getRoleColor(member.role || "")}`}>
-                                                        <RoleIcon className="h-3 w-3 mr-1" />
-                                                        {member.role || "Member"}
-                                                    </Badge>
-                                                    <Badge className={`text-xs ${getMemberTypeBadge(memberType)}`}>
-                                                        {memberType === "leader" ? "Team Leader" :
-                                                            memberType === "coordinator" ? "Coordinator" : "Member"}
-                                                    </Badge>
-                                                </div>
-                                                <Badge variant="outline" className="text-xs">
-                                                    {member.teamName}
+                                            {/* Role Badge */}
+                                            <div className="mb-3">
+                                                <Badge className={`text-xs ${roleColor}`}>
+                                                    <RoleIcon className="h-3 w-3 mr-1" />
+                                                    {roleLabel}
                                                 </Badge>
+                                                {member.isOwner && (
+                                                    <Badge variant="outline" className="text-xs ml-2 bg-purple-50 text-purple-700 border-purple-200">
+                                                        <Crown className="h-3 w-3 mr-1" />
+                                                        Owner
+                                                    </Badge>
+                                                )}
                                             </div>
 
-                                            <div className="space-y-1 text-xs text-gray-600 mb-3">
-                                                <div className="flex items-center space-x-1">
-                                                    <Mail className="h-3 w-3" />
+                                            {/* Contact Info */}
+                                            <div className="space-y-1.5 text-xs text-gray-600">
+                                                <div className="flex items-center space-x-1.5">
+                                                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
                                                     <span className="truncate">{member.email}</span>
                                                 </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {member.college}
-                                                </div>
+                                                {member.college && (
+                                                    <div className="text-xs text-gray-500 truncate">
+                                                        {member.college}
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* Simplified action - just show role */}
-                                            <div className="text-xs text-gray-500">
-                                                {member.isTeamLeader ? "Team Leader" : "Team Member"}
-                                            </div>
+                                            {/* Joined Date */}
+                                            {member.joinedAt && (
+                                                <div className="mt-2 text-xs text-gray-400">
+                                                    Joined {new Date(member.joinedAt).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -240,10 +250,22 @@ export const AllMembers = ({ teams, currentUserId, canManageMembers = false }: A
                         })}
                     </div>
 
-                    {uniqueMembers.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                            <User className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                            <p>No members found in any teams</p>
+                    {/* Empty State */}
+                    {sortedMembers.length === 0 && (
+                        <div className="text-center py-12 text-gray-500">
+                            <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                            <p className="text-lg font-medium mb-2">No members found</p>
+                            <p className="text-sm">Start by inviting members to your organization</p>
+                            {canManageMembers && (
+                                <Button
+                                    variant="outline"
+                                    className="mt-4"
+                                    onClick={() => openModal("inviteMember")}
+                                >
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Invite First Member
+                                </Button>
+                            )}
                         </div>
                     )}
                 </CardContent>

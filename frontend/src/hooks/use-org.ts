@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-
 import axios from "axios";
-import { Org, User } from "@/type";
+import { Org, User, OrgRole, OrgStatistics, Team, Event, Task, Budget } from "@/type";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrgStore } from "./use-org-store";
 import { backend_api_url } from "@/constants";
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface CreateOrgRequest {
   name: string;
@@ -19,17 +23,56 @@ interface CreateOrgRequest {
 }
 
 interface UpdateOrgRequest {
-  name: string;
-  college: string;
+  name?: string;
+  college?: string;
   description?: string;
-  contactEmail: string;
-  contactPhone: string;
-  website: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  website?: string;
 }
 
-interface ApiResponse {
-  message: string;
+interface UpdateMemberRoleRequest {
+  userId: number;
+  role: OrgRole;
 }
+
+interface RemoveMemberRequest {
+  userId: number;
+}
+
+interface TransferOwnershipRequest {
+  newOwnerId: number;
+}
+
+interface OrgMember extends User {
+  orgRole: OrgRole;
+  joinedAt: string;
+  isOwner: boolean;
+}
+
+interface OrgDetails {
+  org: Org;
+  userRole: OrgRole | null;
+  isOwner: boolean;
+  members: OrgMember[];
+  teams: Team[];
+  events: Event[];
+  tasks: Task[];
+  budgets: Budget[];
+}
+
+// interface SearchOrgsParams {
+//   query: string;
+// }
+
+interface ApiResponse<T = any> {
+  message: string;
+  data?: T;
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -40,6 +83,11 @@ const getAuthHeaders = () => {
   };
 };
 
+// ============================================================================
+// API FUNCTIONS
+// ============================================================================
+
+// Create Organization
 const createOrganization = async (orgData: CreateOrgRequest) => {
   const response = await axios.post(
     `${backend_api_url}/org/create`,
@@ -49,15 +97,13 @@ const createOrganization = async (orgData: CreateOrgRequest) => {
     }
   );
 
-  console.log("API response: ", response);
-
-  // Return the exact response structure if not an array
   return {
-    message: response.data[0].message,
-    org: response.data[0].data,
+    message: response.data.message,
+    org: response.data.data,
   };
 };
 
+// Update Organization
 const updateOrganization = async ({
   id,
   ...updateData
@@ -75,6 +121,7 @@ const updateOrganization = async ({
   };
 };
 
+// Delete Organization
 const deleteOrganization = async (id: number) => {
   const res = await axios.delete<ApiResponse>(
     `${backend_api_url}/org/delete/${id}`,
@@ -86,6 +133,7 @@ const deleteOrganization = async (id: number) => {
   return res.data.message;
 };
 
+// Get Organization by ID
 const getOrganizationById = async (id: number): Promise<Org> => {
   const response = await axios.get(`${backend_api_url}/org/get/${id}`, {
     headers: getAuthHeaders(),
@@ -93,6 +141,7 @@ const getOrganizationById = async (id: number): Promise<Org> => {
   return response.data.data;
 };
 
+// Get All Organizations
 const getAllOrganizations = async (): Promise<Org[]> => {
   const res = await axios.get(`${backend_api_url}/org/get-all`, {
     headers: getAuthHeaders(),
@@ -100,16 +149,39 @@ const getAllOrganizations = async (): Promise<Org[]> => {
   return res.data.data;
 };
 
+// Get My Organizations
+const getMyOrganizations = async (): Promise<Org[]> => {
+  const response = await axios.get(`${backend_api_url}/org/my-organizations`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data.data;
+};
+
+// Join Organization
 const joinOrganization = async (code: string) => {
   const response = await axios.post(
     `${backend_api_url}/org/join`,
     { code },
     { headers: getAuthHeaders() }
   );
-  return response.data.data;
+  return {
+    message: response.data.message,
+    org: response.data.data,
+  };
 };
 
-export const getOrganizationMembers = async (orgId: number): Promise<User[]> => {
+// Leave Organization
+const leaveOrganization = async (orgId: number) => {
+  const response = await axios.post(
+    `${backend_api_url}/org/leave/${orgId}`,
+    {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data.message;
+};
+
+// Get Organization Members
+export const getOrganizationMembers = async (orgId: number): Promise<OrgMember[]> => {
   const response = await axios.get(
     `${backend_api_url}/org/members/${orgId}`,
     {
@@ -118,6 +190,87 @@ export const getOrganizationMembers = async (orgId: number): Promise<User[]> => 
   );
   return response.data.data;
 };
+
+// Update Member Role
+const updateMemberRole = async ({
+  orgId,
+  ...data
+}: UpdateMemberRoleRequest & { orgId: number }) => {
+  const response = await axios.patch(
+    `${backend_api_url}/org/members/${orgId}/update-role`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return {
+    message: response.data.message,
+    data: response.data.data,
+  };
+};
+
+// Remove Member
+const removeMember = async ({
+  orgId,
+  ...data
+}: RemoveMemberRequest & { orgId: number }) => {
+  const response = await axios.delete(
+    `${backend_api_url}/org/members/${orgId}/remove`,
+    {
+      headers: getAuthHeaders(),
+      data,
+    }
+  );
+  return response.data.message;
+};
+
+// Search Organizations
+const searchOrganizations = async (query: string): Promise<Org[]> => {
+  const response = await axios.get(`${backend_api_url}/org/search`, {
+    params: { q: query },
+    headers: getAuthHeaders(),
+  });
+  return response.data.data;
+};
+
+// Get Organization Full Details
+const getOrganizationDetails = async (orgId: number): Promise<OrgDetails> => {
+  const response = await axios.get(`${backend_api_url}/org/details/${orgId}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};
+
+// Transfer Ownership
+const transferOwnership = async ({
+  orgId,
+  ...data
+}: TransferOwnershipRequest & { orgId: number }) => {
+  const response = await axios.post(
+    `${backend_api_url}/org/transfer-ownership/${orgId}`,
+    data,
+    { headers: getAuthHeaders() }
+  );
+  return {
+    message: response.data.message,
+    data: response.data.data,
+  };
+};
+
+// Get Organization Statistics
+export const getOrganizationStatistics = async (
+  orgId: number
+): Promise<OrgStatistics> => {
+  const response = await axios.get(
+    `${backend_api_url}/org/statistics/${orgId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  return response.data.data;
+};
+
+// ============================================================================
+// MUTATION HOOKS
+// ============================================================================
 
 export const useCreateOrg = () => {
   const router = useRouter();
@@ -128,22 +281,18 @@ export const useCreateOrg = () => {
     mutationFn: createOrganization,
     onSuccess: (data) => {
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["user", "owned-orgs"] });
-      queryClient.invalidateQueries({ queryKey: ["user", "member-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
 
-      // Show success toast
-      toast.success(data.message || "Club created successfully!");
+    //   toast.success(data.message || "Organization created successfully!");
 
       // Navigate to the organization page
       setActiveOrg(data.org);
-      const orgId = data.org.id;
-      router.push(`/orgs/${orgId}`);
+      router.push(`/orgs/${data.org.id}`);
     },
     onError: (error) => {
-      console.error("Error creating club:", error);
+      console.error("Error creating organization:", error);
 
-      // Extract error message
       let errorMessage = "Failed to create organization. Please try again.";
 
       if (axios.isAxiosError(error)) {
@@ -160,29 +309,21 @@ export const useCreateOrg = () => {
 };
 
 export const useUpdateOrg = () => {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateOrganization,
-    onSuccess: (updatedOrg) => {
-      console.log("Update org success response:", updatedOrg); // Debug log
-
-      if (updatedOrg?.org?.id) {
-        queryClient.setQueryData(["org", updatedOrg.org.id], updatedOrg.org);
+    onSuccess: (data) => {
+      if (data?.org?.id) {
+        queryClient.setQueryData(["org", data.org.id], data.org);
+        queryClient.invalidateQueries({ queryKey: ["org", data.org.id] });
+        queryClient.invalidateQueries({ queryKey: ["org-details", data.org.id] });
       }
 
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["user", "owned-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
 
-      toast.success(updatedOrg.message || "Organization updated successfully!");
-
-      try {
-        router.push("/dashboard");
-      } catch (navigationError) {
-        console.error("Navigation error:", navigationError);
-      }
+      toast.success(data.message || "Organization updated successfully!");
     },
     onError: (error: any) => {
       console.error("Error updating organization:", error);
@@ -207,20 +348,13 @@ export const useDeleteOrg = () => {
   return useMutation({
     mutationFn: deleteOrganization,
     onSuccess: (message, deletedId) => {
-      // Remove from cache
       queryClient.removeQueries({ queryKey: ["org", deletedId] });
-
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["user", "owned-orgs"] });
+      queryClient.removeQueries({ queryKey: ["org-details", deletedId] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
 
       toast.success(message || "Organization deleted successfully!");
-
-      try {
-        router.push("/dashboard");
-      } catch (navigationError) {
-        console.error("Navigation error:", navigationError);
-      }
+      router.push("/dashboard");
     },
     onError: (error: any) => {
       console.error("Error deleting organization:", error);
@@ -244,10 +378,10 @@ export const useJoinOrg = () => {
   return useMutation({
     mutationFn: joinOrganization,
     onSuccess: (data) => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["user", "owned-orgs"] });
-      queryClient.invalidateQueries({ queryKey: ["user", "member-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
+
+      toast.success(data.message || "Successfully joined organization!");
 
       return data;
     },
@@ -262,14 +396,134 @@ export const useJoinOrg = () => {
         errorMessage = error.message;
       }
 
-      // Don't throw the error here - let the mutation handle it
-      // The error will be passed to the onError callback in your component
-      console.error("Join organization error:", errorMessage);
+      toast.error(errorMessage);
     },
   });
 };
 
-// Query hooks
+export const useLeaveOrg = () => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: leaveOrganization,
+    onSuccess: (message, orgId) => {
+      queryClient.removeQueries({ queryKey: ["org", orgId] });
+      queryClient.removeQueries({ queryKey: ["org-details", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["orgs"] });
+
+      toast.success(message || "Left organization successfully!");
+      router.push("/dashboard");
+    },
+    onError: (error: any) => {
+      console.error("Error leaving organization:", error);
+
+      let errorMessage = "Failed to leave organization. Please try again.";
+
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useUpdateMemberRole = (orgId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateMemberRoleRequest) =>
+      updateMemberRole({ orgId, ...data }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["org-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org-details", orgId] });
+
+      toast.success(data.message || "Member role updated successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error updating member role:", error);
+
+      let errorMessage = "Failed to update member role. Please try again.";
+
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useRemoveMember = (orgId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: RemoveMemberRequest) => removeMember({ orgId, ...data }),
+    onSuccess: (message) => {
+      queryClient.invalidateQueries({ queryKey: ["org-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org-details", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org", orgId] });
+
+      toast.success(message || "Member removed successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error removing member:", error);
+
+      let errorMessage = "Failed to remove member. Please try again.";
+
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useTransferOwnership = (orgId: number) => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: TransferOwnershipRequest) =>
+      transferOwnership({ orgId, ...data }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["org", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org-details", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["org-members", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
+
+      toast.success(data.message || "Ownership transferred successfully!");
+      router.push("/dashboard");
+    },
+    onError: (error: any) => {
+      console.error("Error transferring ownership:", error);
+
+      let errorMessage = "Failed to transfer ownership. Please try again.";
+
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    },
+  });
+};
+
+// ============================================================================
+// QUERY HOOKS
+// ============================================================================
+
 export const useOrg = (id: number) => {
   return useQuery({
     queryKey: ["org", id],
@@ -287,19 +541,58 @@ export const useAllOrgs = () => {
   });
 };
 
+export const useMyOrgs = () => {
+  return useQuery({
+    queryKey: ["my-orgs"],
+    queryFn: getMyOrganizations,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 export const useOrgMembers = (orgId: number) => {
   return useQuery({
-    queryKey: ["org", "members", orgId],
+    queryKey: ["org-members", orgId],
     queryFn: () => getOrganizationMembers(orgId),
     // enabled: !!orgId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
-// Utility hooks
+export const useOrgDetails = (orgId: number) => {
+  return useQuery({
+    queryKey: ["org-details", orgId],
+    queryFn: () => getOrganizationDetails(orgId),
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useSearchOrgs = (query: string) => {
+  return useQuery({
+    queryKey: ["search-orgs", query],
+    queryFn: () => searchOrganizations(query),
+    enabled: query.length > 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useOrgStatistics = (orgId: number) => {
+  return useQuery({
+    queryKey: ["org-statistics", orgId],
+    queryFn: () => getOrganizationStatistics(orgId),
+    enabled: !!orgId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+// ============================================================================
+// UTILITY HOOKS
+// ============================================================================
+
 export const useOrgActions = (orgId: number) => {
   const updateMutation = useUpdateOrg();
   const deleteMutation = useDeleteOrg();
+  const leaveMutation = useLeaveOrg();
   const { data: org, isLoading, error } = useOrg(orgId);
 
   const updateOrg = (updateData: UpdateOrgRequest) => {
@@ -310,15 +603,79 @@ export const useOrgActions = (orgId: number) => {
     deleteMutation.mutate(orgId);
   };
 
+  const leaveOrg = () => {
+    leaveMutation.mutate(orgId);
+  };
+
   return {
     org,
     isLoading,
     error,
     updateOrg,
     deleteOrg,
+    leaveOrg,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isLeaving: leaveMutation.isPending,
     updateError: updateMutation.error,
     deleteError: deleteMutation.error,
+    leaveError: leaveMutation.error,
   };
+};
+
+export const useOrgMemberActions = (orgId: number) => {
+  const updateRoleMutation = useUpdateMemberRole(orgId);
+  const removeMemberMutation = useRemoveMember(orgId);
+  const { data: members, isLoading } = useOrgMembers(orgId);
+
+  const updateRole = (userId: number, role: OrgRole) => {
+    updateRoleMutation.mutate({ userId, role });
+  };
+
+  const removeMember = (userId: number) => {
+    removeMemberMutation.mutate({ userId });
+  };
+
+  return {
+    members,
+    isLoading,
+    updateRole,
+    removeMember,
+    isUpdatingRole: updateRoleMutation.isPending,
+    isRemovingMember: removeMemberMutation.isPending,
+    updateRoleError: updateRoleMutation.error,
+    removeMemberError: removeMemberMutation.error,
+  };
+};
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+export const isOrgLeader = (org: Org | undefined, userRole: OrgRole | null) => {
+  return userRole === "leader";
+};
+
+export const isOrgAdmin = (org: Org | undefined, userRole: OrgRole | null) => {
+  return userRole === "leader" || userRole === "coleader";
+};
+
+export const isOrgMember = (org: Org | undefined, userRole: OrgRole | null) => {
+  return !!userRole;
+};
+
+export const canUpdateOrg = (userRole: OrgRole | null) => {
+  return userRole === "leader" || userRole === "coleader";
+};
+
+export const canDeleteOrg = (org: Org | undefined, userId: number) => {
+  return org?.ownerId === userId;
+};
+
+export const canUpdateRoles = (userRole: OrgRole | null) => {
+  return userRole === "leader";
+};
+
+export const canRemoveMembers = (userRole: OrgRole | null) => {
+  return userRole === "leader" || userRole === "coleader";
 };

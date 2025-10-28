@@ -1,15 +1,11 @@
 "use client";
 
-import { Event, Team, User } from "@/type";
+import { Event, OrgStatistics } from "@/type";
 import { useQuery } from "@tanstack/react-query";
 import { getAllEventsByOrg } from "./use-event";
-import { getAllTeamsByOrg } from "./use-team";
-import { getOrganizationMembers } from "./use-org";
+import { getOrganizationStatistics } from "./use-org";
 
-interface DashboardStats {
-  totalEvents: number;
-  totalMembers: number;
-  totalTeams: number;
+interface DashboardStats extends OrgStatistics {
   recentEvents: Event[];
 }
 
@@ -17,16 +13,13 @@ export const useOrgDashboard = (orgId: number) => {
   return useQuery<DashboardStats>({
     queryKey: ["dashboard", orgId],
     queryFn: async () => {
-      const [eventsRes, teamsRes, membersRes] = await Promise.all([
-        getAllEventsByOrg(orgId),
-        getAllTeamsByOrg(orgId),
-        getOrganizationMembers(orgId),
-      ]);
+      // Call the API function directly, not the hook
+      const statistics = await getOrganizationStatistics(orgId);
 
-      const events: Event[] = eventsRes;
-      const teams: Team[] = teamsRes;
-      const members: User[] = membersRes;
+      // Fetch events separately (only if needed for recent events display)
+      const events = await getAllEventsByOrg(orgId);
 
+      // Sort events by creation date and get most recent
       const sortedEvents = [...events].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -35,11 +28,25 @@ export const useOrgDashboard = (orgId: number) => {
       const recentEvents = sortedEvents.slice(0, 5);
 
       return {
-        totalEvents: events.length,
-        totalTeams: teams.length,
-        totalMembers: members.length,
+        ...statistics,
         recentEvents,
       };
     },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+/**
+ * Lightweight dashboard hook that only fetches statistics
+ * Use this if you don't need recent events
+ */
+export const useOrgDashboardStats = (orgId: number) => {
+  return useQuery({
+    queryKey: ["org-statistics", orgId],
+    queryFn: () => getOrganizationStatistics(orgId),
+    enabled: !!orgId,
+    staleTime: 10 * 60 * 1000,
   });
 };

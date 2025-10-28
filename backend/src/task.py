@@ -254,3 +254,39 @@ def unassign_task():
 
     db.session.commit()
     return jsonify({"message": "Users unassigned", "removed_user_ids": removed}), 200
+
+
+@task_bp.route("/update-status/<int:task_id>", methods=["PATCH"])
+@token_required
+def update_task_status(current_user, task_id):
+    data = request.get_json()
+    new_status = data.get("status")
+
+    if not new_status:
+        return jsonify({"error": "Status is required"}), 400
+
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    # ✅ Check if current_user is assigned to this task
+    is_assigned = (
+        db.session.query(TaskAssignee)
+        .filter(
+            TaskAssignee.task_id == task_id,
+            TaskAssignee.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not is_assigned:
+        return jsonify({"error": "Not authorized"}), 403
+
+    # ✅ Update only the status
+    task.status = new_status
+    db.session.commit()
+
+    return jsonify({
+        "message": "Status updated successfully",
+        "task": task.to_json()
+    }), 200

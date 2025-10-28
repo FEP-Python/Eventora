@@ -7,6 +7,7 @@ type ModalType =
   | "joinUrl"
   | "manageMembers"
   | "teamMembersManagement"
+  | "orgMemberManagement"
   | null;
 
 interface ModalState {

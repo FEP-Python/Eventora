@@ -10,10 +10,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { CardContent } from "@/components/ui/card"
+import { CardContent, CardFooter } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 
 const formSchema = z.object({
@@ -227,6 +228,12 @@ export function CreateOrgForm() {
                     </form>
                 </Form>
             </CardContent>
+            <CardFooter className="pb-5 text-center flex items-center justify-center">
+                Have a code? {" "}
+                <Link href='/join-club' className="underline text-[#3A5A40] ml-1">
+                    Join Club
+                </Link>
+            </CardFooter>
         </div>
     )
 }

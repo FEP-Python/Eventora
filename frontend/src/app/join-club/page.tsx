@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,6 +11,7 @@ import { Users, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { useJoinOrg } from "@/hooks/use-org";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function JoinClubPage() {
     const router = useRouter();
@@ -38,10 +39,10 @@ export default function JoinClubPage() {
 
                 // Redirect to main dashboard page after 2 seconds
                 setTimeout(() => {
-                    router.push(`/orgs/${result.id}`);
+                    router.push(`/orgs/${result.org.id}`);
                 }, 2000);
             },
-            onError: (err: any) => {
+            onError: (err) => {
                 console.log("Error details:", err); // This will help debug
 
                 // Extract the actual error message from the response
@@ -139,6 +140,12 @@ export default function JoinClubPage() {
                         </>
                     )}
                 </CardContent>
+                <CardFooter>
+                    Don&apos;t have code? {" "}
+                    <Link href='/create-org' className="underline text-[#3A5A40] ml-1">
+                        Create Club
+                    </Link>
+                </CardFooter>
             </Card>
         </div>
     );

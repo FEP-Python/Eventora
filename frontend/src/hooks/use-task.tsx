@@ -59,9 +59,8 @@ const createTask = async (taskData: CreateTaskRequest) => {
         headers: getAuthHeaders()
     });
 
-    console.log("Create task API response: ", response);
-
     return {
+        task: response.data.task as Task,
         message: response.data.message || "Task created successfully",
         assignedUserIds: response.data["Assigned User Ids"] || []
     };
@@ -120,6 +119,16 @@ const unassignTask = async (unassignData: UnassignTaskRequest) => {
     };
 };
 
+const updateStatus = async ({taskId, status}: { taskId: number, status: string }) => {
+    const res = await axios.patch(`${backend_api_url}/task/update-status/${taskId}`, { status }, {
+        headers: getAuthHeaders()
+    });
+
+    return {
+        message: res.data.message || "Task status updated successfully",
+    }
+}
+
 // Helper function to extract error message
 const getErrorMessage = (error: unknown): string => {
     if (axios.isAxiosError(error)) {
@@ -142,14 +151,23 @@ const getErrorMessage = (error: unknown): string => {
 // Mutation Hooks
 export const useCreateTask = () => {
     const queryClient = useQueryClient();
+    const assignMutation = useAssignTask();
 
     return useMutation({
         mutationFn: createTask,
-        onSuccess: (data, variables) => {
+        onSuccess: async (data, variables) => {
             // Invalidate related queries
             queryClient.invalidateQueries({ queryKey: ["tasks", "event", variables.eventId] });
             queryClient.invalidateQueries({ queryKey: ["tasks", "team", variables.teamId] });
             queryClient.invalidateQueries({ queryKey: ["tasks", "org", variables.orgId] });
+
+            // If userIds were provided, assign them
+            if (variables.userIds && variables.userIds.length > 0 && data.task?.id) {
+                await assignMutation.mutateAsync({
+                    taskId: data.task.id,
+                    userIds: variables.userIds
+                });
+            }
 
             // Show success toast
             toast.success(data.message);
@@ -241,6 +259,25 @@ export const useUnassignTask = () => {
         },
         onError: (error: unknown) => {
             const errorMessage = getErrorMessage(error) || "Failed to unassign task. Please try again.";
+            toast.error(errorMessage);
+        },
+    });
+};
+
+export const useUpdateTaskStatus = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: updateStatus,
+        onSuccess: (data, variables) => {
+            // Invalidate tasks queries to refresh the data
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+
+            toast.success(data.message || "Task status updated!");
+        },
+        onError: (error: unknown) => {
+            const errorMessage = getErrorMessage(error) || "Failed to update task. Please try again.";
             toast.error(errorMessage);
         },
     });
