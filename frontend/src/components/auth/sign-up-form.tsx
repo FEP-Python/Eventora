@@ -218,9 +218,9 @@ const SignUpForm = () => {
                         <Button
                             type="submit"
                             className="flex-1 w-full bg-[#3A5A40] hover:bg-[#344E41] text-white"
-                            disabled={isLoading}
+                            disabled={register.isPending || isLoading}
                         >
-                            {isLoading ? (
+                            {register.isPending ? (
                                 <div className="flex items-center space-x-2">
                                     <Loader2 className="animate-spin h-4 w-4" />
                                     <span>Creating...</span>
