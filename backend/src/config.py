@@ -1,17 +1,17 @@
-from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 import os
 
-app = Flask(__name__)
-CORS(app)
+load_dotenv()
 
-SECRET_KEY = "testing_secret"
-DATABASE_URI = os.getenv("DATABASE_URI");
-# DATABASE_URI = "postgresql://postgres:ved@31052006@db.gunayisrofhplorrkllf.supabase.co:5432/postgres"
+db = SQLAlchemy()
 
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", SECRET_KEY)
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+SECRET_KEY = os.getenv("SECRET_KEY", "testing_secret")
 
-db = SQLAlchemy(app)
+USER = os.getenv("DB_USER")
+PASSWORD = os.getenv("DB_PASSWORD")
+HOST = os.getenv("DB_HOST")
+PORT = os.getenv("DB_PORT")
+DBNAME = os.getenv("DB_NAME")
+
+DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"

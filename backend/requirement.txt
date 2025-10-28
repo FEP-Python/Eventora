@@ -2,10 +2,11 @@ Flask==3.0.3
 Flask-Cors==4.0.1
 Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.34
+sqlalchemy
 Werkzeug==3.0.3
 itsdangerous==2.2.0
 click==8.1.7
 python-dotenv==1.0.1
 gunicorn
 jwt
-psycopg2-binary
+psycopg2
