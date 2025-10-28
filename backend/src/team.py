@@ -1,8 +1,8 @@
-from config import db
-from lib import token_required
+from src.config import db
+from src.lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from models import Team, Organization, TeamMember, User, OrgRole, OrganizationMember
+from src.models import Team, Organization, TeamMember, User, OrgRole, OrganizationMember
 
 team_bp = Blueprint("team", __name__)
 

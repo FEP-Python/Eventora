@@ -1,8 +1,8 @@
-from config import db
-from lib import token_required
+from src.config import db
+from src.lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from models import Budget, Organization, OrganizationMember, OrgRole
+from src.models import Budget, Organization, OrganizationMember, OrgRole
 
 budget_bp = Blueprint("budget", __name__)
 
@@ -11,19 +11,19 @@ budget_bp = Blueprint("budget", __name__)
 def create_budget(current_user):
     try:
         data = request.json
-        
+
         # Extract required fields
         org_id = data.get("orgId")
         name = data.get("name")
         total_amount = data.get("totalAmount")
-        
+
         # Validate required fields
         if not all([org_id, name, total_amount]):
             missing_fields = []
             if not org_id: missing_fields.append("orgId")
             if not name: missing_fields.append("name")
             if not total_amount: missing_fields.append("totalAmount")
-            
+
             return jsonify({
                 "message": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
@@ -42,7 +42,7 @@ def create_budget(current_user):
             user_id=current_user.id,
             org_id=org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -57,7 +57,7 @@ def create_budget(current_user):
         # Validate spent_amount is not negative and not greater than total_amount
         if spent_amount < 0:
             return jsonify({"message": "Spent amount cannot be negative"}), 400
-        
+
         if spent_amount > total_amount:
             return jsonify({"message": "Spent amount cannot be greater than total amount"}), 400
 
@@ -72,7 +72,7 @@ def create_budget(current_user):
 
         db.session.add(new_budget)
         db.session.commit()
-        
+
         return jsonify({
             "message": "Budget created successfully",
             "data": new_budget.to_json()
@@ -99,7 +99,7 @@ def get_all_budgets_by_org_id(current_user, org_id):
             user_id=current_user.id,
             org_id=org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -122,7 +122,7 @@ def get_budget_by_id(current_user, budget_id):
             user_id=current_user.id,
             org_id=budget.org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -144,7 +144,7 @@ def update_budget(current_user, budget_id):
             user_id=current_user.id,
             org_id=budget.org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -153,7 +153,7 @@ def update_budget(current_user, budget_id):
             return jsonify({"message": "Only leaders and co-leaders can update budgets"}), 403
 
         data = request.json
-        
+
         # Update fields if provided
         if "name" in data:
             budget.name = data["name"]
@@ -173,7 +173,7 @@ def update_budget(current_user, budget_id):
             budget.spent_amount = spent_amount
 
         db.session.commit()
-        
+
         return jsonify({
             "message": "Budget updated successfully",
             "data": budget.to_json()
@@ -196,7 +196,7 @@ def delete_budget(current_user, budget_id):
             user_id=current_user.id,
             org_id=budget.org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -226,7 +226,7 @@ def add_expense(current_user, budget_id):
             user_id=current_user.id,
             org_id=budget.org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -236,7 +236,7 @@ def add_expense(current_user, budget_id):
 
         data = request.json
         expense_amount = data.get("amount")
-        
+
         if not expense_amount:
             return jsonify({"message": "Expense amount is required"}), 400
 
@@ -276,7 +276,7 @@ def remove_expense(current_user, budget_id):
             user_id=current_user.id,
             org_id=budget.org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
@@ -286,7 +286,7 @@ def remove_expense(current_user, budget_id):
 
         data = request.json
         expense_amount = data.get("amount")
-        
+
         if not expense_amount:
             return jsonify({"message": "Expense amount is required"}), 400
 
@@ -327,17 +327,17 @@ def get_budget_analytics(current_user, org_id):
             user_id=current_user.id,
             org_id=org_id
         ).first()
-        
+
         if not membership:
             return jsonify({"message": "You are not a member of this organization"}), 403
 
         budgets = Budget.query.filter_by(org_id=org_id).all()
-        
+
         # Calculate analytics
         total_budget = sum(budget.total_amount for budget in budgets)
         total_spent = sum(budget.spent_amount for budget in budgets)
         total_remaining = total_budget - total_spent
-        
+
         analytics = {
             "totalBudgets": len(budgets),
             "totalBudgetAmount": total_budget,

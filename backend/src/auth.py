@@ -1,6 +1,6 @@
-from config import db
-from models import User
-from lib import generate_token
+from src.config import db
+from src.models import User
+from src.lib import generate_token
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash

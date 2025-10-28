@@ -1,9 +1,9 @@
-from config import db
+from src.config import db
 from datetime import datetime
-from lib import token_required
+from src.lib import token_required
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from models import Task, Team, TeamMember, TaskAssignee, TaskStatus, Priority
+from src.models import Task, Team, TeamMember, TaskAssignee, TaskStatus, Priority
 
 task_bp = Blueprint("task", __name__)
 

@@ -1,9 +1,9 @@
-from config import db
+from src.config import db
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from flask import Blueprint, request, jsonify
-from lib import generate_code, token_required
-from models import Organization, OrganizationMember, OrgRole, TeamMember, EventStatus
+from src.lib import generate_code, token_required
+from src.models import Organization, OrganizationMember, OrgRole, TeamMember, EventStatus
 
 org_bp = Blueprint("org", __name__)
 

@@ -1,9 +1,9 @@
 import jwt
 import string
 import random
-from models import  User
+from src.models import  User
 from functools import wraps
-from config import SECRET_KEY
+from src.config import SECRET_KEY
 from flask import request, jsonify
 from datetime import datetime, timedelta
 

@@ -1,11 +1,11 @@
-from org import org_bp
-from user import user_bp
-from task import task_bp
-from team import team_bp
-from auth import auth_bp
-from event import event_bp
-from budget import budget_bp
-from config import app, db
+from src.org import org_bp
+from src.user import user_bp
+from src.task import task_bp
+from src.team import team_bp
+from src.auth import auth_bp
+from src.event import event_bp
+from src.budget import budget_bp
+from src.config import app, db
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(user_bp, url_prefix='/api/user')
