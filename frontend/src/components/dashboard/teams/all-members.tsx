@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useModalStore } from "@/hooks/use-modal-store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Crown, Mail, Shield, User, UserPlus, Settings, Users } from "lucide-react";
+import { Crown, Mail, Shield, User, UserPlus, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AllMembersProps {
