@@ -205,7 +205,7 @@ export const CreateTaskModal = ({
         }
 
         try {
-            createTaskMutation.mutate({
+            await createTaskMutation.mutateAsync({
                 eventId: selectedEventId || 0,
                 teamId,
                 orgId,

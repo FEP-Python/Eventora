@@ -54,7 +54,7 @@ class TeamMember(db.Model):
 
 
 class TaskAssignee(db.Model):
-    task_id = db.Column(db.Integer, db.ForeignKey("task.id"), primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("task.id", ondelete="CASCADE"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -315,6 +315,12 @@ class Task(db.Model):
     team = db.relationship("Team", back_populates="tasks")
     organization = db.relationship("Organization", back_populates="tasks")
 
+    assignees = db.relationship(
+        "TaskAssignee",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+
     __table_args__ = (
         db.Index("idx_task_team_status", "team_id", "status"),
         db.Index("idx_task_event_status", "event_id", "status"),
@@ -339,9 +345,10 @@ class Task(db.Model):
             .join(TaskAssignee, TaskAssignee.user_id == User.id)
             .filter(TaskAssignee.task_id == self.id)
             .all()
-        );
+        )
 
-        data["assignees"] = [{"id": user.id, "name": user.first_name + " " + user.last_name} for user in assignees]
+        data["assignees"] = [
+            {"id": user.id, "name": user.first_name + " " + user.last_name} for user in assignees]
         return data
 
 

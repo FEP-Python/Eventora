@@ -12,7 +12,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useTaskActions } from "@/hooks/use-task";
+import { useDeleteTask } from "@/hooks/use-task";
 
 
 interface DeleteTaskDialogProps {
@@ -22,10 +22,11 @@ interface DeleteTaskDialogProps {
 }
 
 export const DeleteTaskDialog = ({ taskId, open, onClose }: DeleteTaskDialogProps) => {
-    const { deleteTask, isDeleting } = useTaskActions(taskId);
+    // const { deleteTask, isDeleting } = useTaskActions(taskId);
+    const deleteMutation = useDeleteTask();
 
-    const handleDelete = () => {
-        deleteTask();
+    const handleDelete = async () => {
+        await deleteMutation.mutateAsync(taskId);
         onClose(false);
     };
 
@@ -40,8 +41,8 @@ export const DeleteTaskDialog = ({ taskId, open, onClose }: DeleteTaskDialogProp
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => onClose(false)}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/70">
-                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Delete"}
+                    <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending} className="bg-destructive hover:bg-destructive/70">
+                        {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Delete"}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

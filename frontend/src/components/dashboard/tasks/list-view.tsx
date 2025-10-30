@@ -324,7 +324,7 @@ export const ListView = ({
                 <DeleteTaskDialog
                     open={!!deletingTask}
                     onClose={() => setDeletingTask(null)}
-                    taskId={deletingTask?.id || 0}
+                    taskId={deletingTask.id || 0}
                 />
             )}
         </>
