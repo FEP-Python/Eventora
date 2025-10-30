@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, PlusCircle, Shield, User, Users } from "lucide-react"
+import { Crown, Edit, Loader2, PlusCircle, Shield, User, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -9,7 +9,13 @@ import { Team, Task, OrgRole } from "@/type"
 import { useModalStore } from "@/hooks/use-modal-store";
 import { CreateTeamModal } from "./create-team-modal";
 import { TeamMembersManagementModal } from "./team-members-management-modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useDeleteTeam, useTeamActions, useUpdateTeam } from "@/hooks/use-team";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface TeamsGridProps {
     teams: Team[];
@@ -257,9 +263,39 @@ export const TeamsGrid = ({ teams, canManageMembers }: TeamsGridProps) => {
                                             openModal("teamMembersManagement");
                                         }}
                                     >
-                                        <Users className="h-4 w-4 mr-2" />
+                                        <Users className="h-4 w-4" />
                                         View Team
                                     </Button>
+
+                                    {canManageMembers && (
+                                        <>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => {
+                                                    setSelectedTeamId(team.id);
+                                                    openModal("editTeam");
+                                                }}
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                                Edit Info
+                                            </Button>
+
+                                            {/* <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => {
+                                                    setSelectedTeamId(team.id);
+                                                    openModal("deleteTeam");
+                                                }}
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                                Delete
+                                            </Button> */}
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -272,8 +308,130 @@ export const TeamsGrid = ({ teams, canManageMembers }: TeamsGridProps) => {
             {selectedTeamId && (
                 <>
                     <TeamMembersManagementModal teamId={selectedTeamId} canManageMembers={canManageMembers} />
+                    <EditTeamModal teamId={selectedTeamId} />
+                    <DeleteTeamModal teamId={selectedTeamId} />
                 </>
             )}
         </>
-    )
+    );
+}
+
+
+const EditTeamModal = ({ teamId }: { teamId: number }) => {
+    const { team, isLoading } = useTeamActions(teamId);
+    const updateTeamMutation = useUpdateTeam();
+    const { isOpen, closeModal, type } = useModalStore();
+
+    const [formData, setFormData] = useState({
+        name: "",
+        description: "",
+    });
+
+    useEffect(() => {
+        if (isOpen && team) {
+            setFormData({
+                name: team.name || "",
+                description: team.description || "",
+            });
+            // setSelectedTeamId(team.id);
+        }
+    }, [isOpen, team]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await updateTeamMutation.mutateAsync({
+            id: teamId,
+            name: formData.name,
+            description: formData.description,
+        });
+
+        closeModal();
+    }
+
+    return (
+        <Dialog open={isOpen && type === "editTeam"} onOpenChange={closeModal}>
+            <DialogContent className="">
+                <DialogHeader>
+                    <DialogTitle>Edit Team</DialogTitle>
+                    <DialogDescription>
+                        Update team details below.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {isLoading ? (
+                    <p className="text-sm text-gray-500">Loading team info...</p>
+                ) : (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid gap-6">
+                            {/* Title */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Name *</Label>
+                                <Input
+                                    id="name"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="Update team name"
+                                    required
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea
+                                    id="description"
+                                    value={formData.description}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Enter team description"
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={closeModal}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="green"
+                                type="submit"
+                                disabled={updateTeamMutation.isPending}
+                            >
+                                {updateTeamMutation.isPending ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+const DeleteTeamModal = ({ teamId }: { teamId: number }) => {
+    const deleteTeamMutation = useDeleteTeam();
+    const { isOpen, closeModal, type } = useModalStore();
+
+    const handleDelete = async () => {
+        await deleteTeamMutation.mutateAsync(teamId);
+        closeModal();
+    }
+
+    return (
+        <AlertDialog open={isOpen && type === "deleteTeam"} onOpenChange={closeModal}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete this team? This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={closeModal}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} disabled={deleteTeamMutation.isPending} className="bg-destructive hover:bg-destructive/70">
+                        {deleteTeamMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Delete"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }

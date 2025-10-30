@@ -21,7 +21,6 @@ export const Header = () => {
 
     const currentUserMember = orgMembers?.find((member) => member.id === currentUser?.id);
     const currentUserRole = currentUserMember?.orgRole;
-    console.log("Current User Role: ", currentUserRole);
 
     const copyJoinUrl = () => {
         if (!activeOrg?.code) {

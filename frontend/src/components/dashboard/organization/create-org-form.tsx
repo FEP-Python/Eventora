@@ -1,8 +1,9 @@
 "use client"
 
 import z from "zod"
-import { useState } from "react"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
+import { useRouter } from "next/navigation"
 import { Building2, GraduationCap, Mail, Phone, Globe, MessageSquare, ArrowLeft } from "lucide-react"
 
 import { useCreateOrg } from "@/hooks/use-org"
@@ -10,11 +11,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { CardContent, CardFooter } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { CardContent, CardFooter } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 
 
 const formSchema = z.object({
@@ -27,8 +26,6 @@ const formSchema = z.object({
 });
 
 export function CreateOrgForm() {
-    const [isLoading, setIsLoading] = useState(false);
-
     const router = useRouter();
     const createOrgMutation = useCreateOrg();
 
@@ -44,14 +41,11 @@ export function CreateOrgForm() {
         }
     });
 
-    const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    const handleSubmit = (values: z.infer<typeof formSchema>) => {
         try {
-            setIsLoading(true);
             createOrgMutation.mutate(values);
         } catch (error) {
             console.log('Error creating club: ', error);
-        } finally {
-            setIsLoading(false);
         }
     }
 
@@ -212,10 +206,10 @@ export function CreateOrgForm() {
                         <div className="pt-4">
                             <Button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={createOrgMutation.isPending}
                                 className="w-full bg-[#3A5A40] hover:bg-[#344E41] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50"
                             >
-                                {isLoading ? (
+                                {createOrgMutation.isPending ? (
                                     <div className="flex items-center gap-2">
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                         Registering...

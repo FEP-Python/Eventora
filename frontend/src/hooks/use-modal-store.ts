@@ -3,6 +3,8 @@ import { create } from "zustand";
 type ModalType =
   | "createEvent"
   | "createTeam"
+  | "editTeam"
+  | "deleteTeam"
   | "inviteMember"
   | "joinUrl"
   | "manageMembers"

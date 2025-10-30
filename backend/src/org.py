@@ -7,6 +7,7 @@ from src.models import Organization, OrganizationMember, OrgRole, TeamMember, Ev
 
 org_bp = Blueprint("org", __name__)
 
+
 @org_bp.route("/create", methods=["POST"])
 @token_required
 def create_org(current_user):
@@ -56,11 +57,13 @@ def create_org(current_user):
         db.session.rollback()
         return jsonify(({"message": str(e)}), 400)
 
+
 @org_bp.route("/get-all", methods=["GET"])
 def get_all_orgs():
     orgs = Organization.query.all()
     json_orgs = list(map(lambda org: org.to_json(), orgs))
     return jsonify({"data": json_orgs})
+
 
 @org_bp.route("/get/<int:org_id>", methods=["GET"])
 @token_required
@@ -75,6 +78,7 @@ def get_org_by_id(current_user, org_id):
     org_data["isMember"] = current_user.is_org_member(org_id)
 
     return jsonify({"data": org_data}), 200
+
 
 @org_bp.route("/update/<int:org_id>", methods=["PATCH"])
 @token_required
@@ -98,20 +102,56 @@ def update_org(current_user, org_id):
 
     return jsonify({"message": "Organization updated", "data": org.to_json()}), 200
 
+# @org_bp.route("/delete/<int:org_id>", methods=["DELETE"])
+# @token_required
+# def delete_org(current_user, org_id):
+#     org = Organization.query.filter_by(id=org_id).first()
+#     if not org:
+#         return jsonify({"message": "Organization not found"}), 404
+
+#     if org.owner_id != current_user.id:
+#         return jsonify({"message": "Not authorized"}), 403
+
+#     db.session.delete(org)
+#     db.session.commit()
+
+#     return jsonify({"message": "Organization deleted"}), 200
+
+# Add this route to your existing org.py file
+
+
 @org_bp.route("/delete/<int:org_id>", methods=["DELETE"])
 @token_required
 def delete_org(current_user, org_id):
-    org = Organization.query.filter_by(id=org_id).first()
+    org = Organization.query.get(org_id)
     if not org:
-        return jsonify({"message": "Organization not found"}), 404
+        return jsonify({"message": "Club not found"}), 404
 
+    # Check if user is the owner
     if org.owner_id != current_user.id:
-        return jsonify({"message": "Not authorized"}), 403
+        return jsonify({"message": "Not authorized. Only the club owner/leader can delete the club"}), 403
 
-    db.session.delete(org)
-    db.session.commit()
+    try:
+        # Get org name before deletion for the response message
+        org_name = org.name
 
-    return jsonify({"message": "Organization deleted"}), 200
+        # Check if user has other organizations before deleting
+        user_orgs = OrganizationMember.query.filter_by(user_id=current_user.id).all()
+        has_other_orgs = len([m for m in user_orgs if m.org_id != org_id]) > 0
+
+        # Delete the organization (cascade will handle related records)
+        db.session.delete(org)
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Club '{org_name}' has been successfully deleted",
+            "deletedOrgId": org_id,
+            "hasOtherOrgs": has_other_orgs
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Failed to delete club: {str(e)}"}), 500
+
 
 @org_bp.route("/members/<int:org_id>", methods=["GET"])
 @token_required
@@ -133,6 +173,7 @@ def get_org_members(current_user, org_id):
         members.append(user_data)
 
     return jsonify({"data": members}), 200
+
 
 @org_bp.route("/members/<int:org_id>/update-role", methods=["PATCH"])
 @token_required
@@ -187,6 +228,7 @@ def update_member_role(current_user, org_id):
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
 
+
 @org_bp.route("/members/<int:org_id>/remove", methods=["DELETE"])
 @token_required
 def remove_member(current_user, org_id):
@@ -228,6 +270,7 @@ def remove_member(current_user, org_id):
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
 
+
 @org_bp.route("/search", methods=["GET"])
 @token_required
 def search_orgs(current_user):
@@ -240,6 +283,7 @@ def search_orgs(current_user):
     ).all()
 
     return jsonify({"data": [org.to_json() for org in orgs]}), 200
+
 
 @org_bp.route("/leave/<int:org_id>", methods=["POST"])
 @token_required
@@ -268,6 +312,7 @@ def leave_org(current_user, org_id):
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
 
+
 @org_bp.route("/details/<int:org_id>", methods=["GET"])
 @token_required
 def get_org_full_details(current_user, org_id):
@@ -287,7 +332,8 @@ def get_org_full_details(current_user, org_id):
     for m in org.members:
         user_data = m.user.to_json()
         user_data["orgRole"] = m.role.value
-        user_data["joinedAt"] = m.joined_at.isoformat() if m.joined_at else None
+        user_data["joinedAt"] = m.joined_at.isoformat(
+        ) if m.joined_at else None
         user_data["isOwner"] = m.user_id == org.owner_id
         members_data.append(user_data)
 
@@ -301,6 +347,7 @@ def get_org_full_details(current_user, org_id):
         "tasks": [t.to_json() for t in org.tasks],
         "budgets": [b.to_json() for b in org.budgets]
     }), 200
+
 
 @org_bp.route("/join", methods=["POST"])
 @token_required
@@ -346,21 +393,25 @@ def join_org(current_user):
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
 
+
 @org_bp.route("/my-organizations", methods=["GET"])
 @token_required
 def get_my_organizations(current_user):
     """Get all organizations where the current user is a member"""
-    memberships = OrganizationMember.query.filter_by(user_id=current_user.id).all()
+    memberships = OrganizationMember.query.filter_by(
+        user_id=current_user.id).all()
 
     orgs_data = []
     for membership in memberships:
         org_data = membership.organization.to_json()
         org_data["userRole"] = membership.role.value
         org_data["isOwner"] = membership.organization.owner_id == current_user.id
-        org_data["joinedAt"] = membership.joined_at.isoformat() if membership.joined_at else None
+        org_data["joinedAt"] = membership.joined_at.isoformat(
+        ) if membership.joined_at else None
         orgs_data.append(org_data)
 
     return jsonify({"data": orgs_data}), 200
+
 
 @org_bp.route("/transfer-ownership/<int:org_id>", methods=["POST"])
 @token_required
@@ -408,6 +459,7 @@ def transfer_ownership(current_user, org_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
+
 
 @org_bp.route("/statistics/<int:org_id>", methods=["GET"])
 @token_required

@@ -6,16 +6,19 @@ import { Navigation } from "./navigation";
 import { SidebarUserProfile } from "./sidebar-profile";
 import { OrgSwitcher } from "./organization/org-switcher";
 
-import { useUserAllOrgs } from "@/hooks/use-users-org";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useOrgDashboard } from "@/hooks/use-dashboard";
+// import { useOrg } from "@/hooks/use-org";
 import { useOrgId } from "@/hooks/use-org-id";
+import { useUserAllOrgs } from "@/hooks/use-users-org";
+import { useOrgDashboard } from "@/hooks/use-dashboard";
+// import { DeleteOrganizationButton } from "./organization/delete-org-button";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 
 
 export const DashboardSidebar = () => {
     const orgId = useOrgId();
-    const { data: dashboardData } = useOrgDashboard(Number(orgId));
     const { data: orgs = [] } = useUserAllOrgs();
+    const { data: dashboardData } = useOrgDashboard(Number(orgId));
+    // const { data: currentOrg } = useOrg(Number(orgId));
 
     return (
         <Sidebar className="flex flex-col w-64 bg-white/90 backdrop-blur-sm border-r border-[#A3B18A]/20">
@@ -31,10 +34,17 @@ export const DashboardSidebar = () => {
                 <OrgSwitcher orgs={orgs} />
             </SidebarHeader>
             <SidebarContent>
-                <Navigation 
+                <Navigation
                     events={dashboardData?.totalEvents || 0}
                     teams={dashboardData?.totalTeams || 0}
                 />
+                {/* <div className="px-4 mb-5">
+                    <DeleteOrganizationButton
+                        size="sm"
+                        className="w-full hover:bg-destructive/80 transition-all duration-300"
+                        organization={currentOrg}
+                    />
+                </div> */}
             </SidebarContent>
             <SidebarFooter>
                 <SidebarUserProfile />

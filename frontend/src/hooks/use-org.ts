@@ -2,12 +2,12 @@
 'use client';
 
 import axios from "axios";
-import { Org, User, OrgRole, OrgStatistics, Team, Event, Task, Budget } from "@/type";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrgStore } from "./use-org-store";
 import { backend_api_url } from "@/constants";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Org, User, OrgRole, OrgStatistics, Team, Event, Task, Budget } from "@/type";
 
 // ============================================================================
 // TYPES
@@ -65,10 +65,10 @@ interface OrgDetails {
 //   query: string;
 // }
 
-interface ApiResponse<T = any> {
-  message: string;
-  data?: T;
-}
+// interface ApiResponse<T = any> {
+//   message: string;
+//   data?: T;
+// }
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -98,8 +98,8 @@ const createOrganization = async (orgData: CreateOrgRequest) => {
   );
 
   return {
-    message: response.data.message,
-    org: response.data.data,
+    message: response.data[0].message,
+    org: response.data[0].data,
   };
 };
 
@@ -123,14 +123,18 @@ const updateOrganization = async ({
 
 // Delete Organization
 const deleteOrganization = async (id: number) => {
-  const res = await axios.delete<ApiResponse>(
+  const res = await axios.delete(
     `${backend_api_url}/org/delete/${id}`,
     {
       headers: getAuthHeaders(),
     }
   );
 
-  return res.data.message;
+  return {
+    message: res.data.message,
+    deletedId: res.data.deletedOrgId,
+    hasOtherOrgs: res.data.hasOtherOrgs,
+  }
 };
 
 // Get Organization by ID
@@ -284,16 +288,16 @@ export const useCreateOrg = () => {
       queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
 
-    //   toast.success(data.message || "Organization created successfully!");
+      toast.success(data.message || "Organization created successfully!");
 
       // Navigate to the organization page
       setActiveOrg(data.org);
       router.push(`/orgs/${data.org.id}`);
     },
     onError: (error) => {
-      console.error("Error creating organization:", error);
+      console.error("Error creating club:", error);
 
-      let errorMessage = "Failed to create organization. Please try again.";
+      let errorMessage = "Failed to create club. Please try again.";
 
       if (axios.isAxiosError(error)) {
         if (error?.response?.data?.message) {
@@ -342,19 +346,22 @@ export const useUpdateOrg = () => {
 };
 
 export const useDeleteOrg = () => {
-  const router = useRouter();
+    const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteOrganization,
-    onSuccess: (message, deletedId) => {
-      queryClient.removeQueries({ queryKey: ["org", deletedId] });
-      queryClient.removeQueries({ queryKey: ["org-details", deletedId] });
+    onSuccess: (data) => {
+      queryClient.removeQueries({ queryKey: ["org", data.deletedId] });
+      queryClient.removeQueries({ queryKey: ["org-details", data.deletedId] });
       queryClient.invalidateQueries({ queryKey: ["my-orgs"] });
       queryClient.invalidateQueries({ queryKey: ["orgs"] });
 
-      toast.success(message || "Organization deleted successfully!");
-      router.push("/dashboard");
+      toast.success("Club deleted successfully!");
+
+      if (!data.hasOtherOrgs || data.hasOtherOrgs === false) {
+        router.push("/create-org");
+      }
     },
     onError: (error: any) => {
       console.error("Error deleting organization:", error);

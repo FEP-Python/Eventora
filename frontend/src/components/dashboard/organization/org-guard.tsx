@@ -2,6 +2,7 @@
 
 import { useIsAuthenticated } from '@/hooks/use-auth';
 import { useRequireOrganization } from '@/utils/org-client-guard';
+import { Suspense, useEffect, useState } from 'react';
 
 interface OrganizationGuardProps {
   children: React.ReactNode;
@@ -9,8 +10,13 @@ interface OrganizationGuardProps {
 }
 
 export function OrganizationGuard({ children, fallback }: OrganizationGuardProps) {
-  const { isAuthenticated } = useIsAuthenticated();
+    const { isAuthenticated } = useIsAuthenticated();
+    const [isMounted, setIsMounted] = useState(false);
   const { hasOrganizations, isLoading, error } = useRequireOrganization();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if(!isAuthenticated) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -36,5 +42,13 @@ export function OrganizationGuard({ children, fallback }: OrganizationGuardProps
     </div>;
   }
 
-  return <>{children}</>;
+  if (!isMounted) return null;
+
+  return(
+      <Suspense fallback={fallback || <div className="flex items-center justify-center min-h-screen">
+        <div>Loading club...</div>
+      </div>}>
+        {children}
+      </Suspense>
+  );
 }

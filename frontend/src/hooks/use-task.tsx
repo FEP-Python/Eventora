@@ -186,8 +186,6 @@ export const useUpdateTask = () => {
     return useMutation({
         mutationFn: updateTask,
         onSuccess: (data, variables) => {
-            console.log("Update task success response:", data);
-
             // Remove the specific task from cache to force refetch
             queryClient.removeQueries({ queryKey: ["task", variables.id] });
 

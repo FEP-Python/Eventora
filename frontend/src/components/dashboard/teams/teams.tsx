@@ -24,8 +24,6 @@ export const Teams = () => {
     const { data: orgMembers } = useOrgMembers(Number(orgId));
     const { data: teams, isLoading: isTeamsLoading, refetch } = useOrgTeams(Number(orgId));
 
-    console.log("Org Members: ", orgMembers);
-
     const currentUserMember = orgMembers?.find((member) => member.id === currentUser?.id);
 
     const currentUserRole = currentUserMember?.orgRole;

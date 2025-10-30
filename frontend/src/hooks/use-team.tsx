@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Team, User, OrgRole } from "@/type";
 import { toast } from "sonner";
 import axios, { AxiosError } from "axios";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Team, User, OrgRole } from "@/type";
 import { backend_api_url } from "@/constants";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ============================================================================
 // TYPES
@@ -248,7 +247,6 @@ const getTeamMembers = async (id: number): Promise<TeamMember[]> => {
 // ============================================================================
 
 export const useCreateTeam = () => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -260,11 +258,6 @@ export const useCreateTeam = () => {
             queryClient.invalidateQueries({ queryKey: ["dashboard", variables.orgId] });
 
             toast.success(data.message || "Team created successfully!");
-
-            // Navigate to the team page if team data is available
-            if (data.team?.id) {
-                router.push(`/orgs/${variables.orgId}/teams/${data.team.id}`);
-            }
         },
         onError: (error: unknown) => {
             console.error("Error creating team:", error);
@@ -304,7 +297,6 @@ export const useUpdateTeam = () => {
 };
 
 export const useDeleteTeam = () => {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -319,7 +311,6 @@ export const useDeleteTeam = () => {
             queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 
             toast.success(message || "Team deleted successfully!");
-            router.back();
         },
         onError: (error: unknown) => {
             console.error("Error deleting team:", error);

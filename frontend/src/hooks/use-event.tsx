@@ -69,8 +69,6 @@ const createEvent = async (eventData: CreateEventRequest) => {
         headers: getAuthHeaders()
     });
 
-    console.log("Create event API response: ", response);
-
     return {
         message: response.data.message || "Event created successfully",
         event: response.data.data
@@ -182,8 +180,6 @@ export const useUpdateEvent = () => {
     return useMutation({
         mutationFn: updateEvent,
         onSuccess: (data) => {
-            console.log("Update event success response:", data);
-
             // Update the specific event in cache
             if (data?.event?.id) {
                 queryClient.setQueryData(["event", data.event.id], data.event);
